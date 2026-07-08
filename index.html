@@ -93,6 +93,14 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.warn{background:var(--warn);}
   .hint{font-size:12px;color:var(--sub);margin-top:9px;text-align:center;}
+  details.import{padding:0;}
+  details.import summary{padding:16px 18px;font-weight:600;font-size:15px;cursor:pointer;list-style:none;}
+  details.import summary::-webkit-details-marker{display:none;}
+  details.import[open] summary{border-bottom:1px solid var(--line);}
+  .impbody{padding:14px 18px 18px;}
+  .impbody textarea{width:100%;min-height:120px;padding:12px 14px;font-size:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font-family:inherit;line-height:1.5;resize:vertical;}
+  .imphint{font-size:12px;color:var(--sub);line-height:1.5;}
+  .improw{display:flex;align-items:center;gap:12px;margin:11px 0;}
 </style>
 </head>
 <body>
@@ -143,6 +151,19 @@
         <button class="add" id="addBtn">＋ 登録する</button>
         <div class="savednote" id="savednote"></div>
       </div>
+
+      <details class="card import">
+        <summary>📥 まとめてインポート（Excel・テキスト）</summary>
+        <div class="impbody">
+          <p class="imphint">1行に1つ。「品名, 場所, 個数」（場所・個数は省略OK）。<br>Excelはセルをコピーして下に貼り付けるだけでOK（タブ区切りも読めるで）。</p>
+          <textarea id="importText" placeholder="ワンピース, リビング / クローゼット1&#10;工具, リビング / テレビ台 / 引出4, 1&#10;喪服 ＠ 寝室 / ウォークイン"></textarea>
+          <div class="improw">
+            <label class="photobtn">📄 ファイル(.csv/.txt)<input type="file" id="importFile" accept=".csv,.txt" hidden></label>
+            <span class="imphint" id="impcount"></span>
+          </div>
+          <button class="add" id="importBtn">この内容でまとめて登録</button>
+        </div>
+      </details>
     </div>
 
     <!-- ===== 一覧・さがすビュー ===== -->
@@ -180,6 +201,7 @@
         roomsEl=$('rooms'), roomNameEl=$('roomName'), roomBtn=$('roomBtn'), savednoteEl=$('savednote'),
         listEl=$('list'), countEl=$('count'), statEl=$('stat'), taphintEl=$('taphint'), fchipsEl=$('fchips'),
         searchEl=$('search'), voiceSearchBtn=$('voiceSearchBtn'), voiceAddBtn=$('voiceAddBtn'), toastEl=$('toast'),
+        importText=$('importText'), importFile=$('importFile'), impcount=$('impcount'), importBtn=$('importBtn'),
         tabRegist=$('tabRegist'), tabBrowse=$('tabBrowse'), viewRegist=$('viewRegist'), viewBrowse=$('viewBrowse');
 
   const cheers=['ええやん！','1個、探し物ゼロに近づいた✨','その調子や😊','登録completed！','コツコツ最強や👏'];
@@ -272,6 +294,29 @@
   $('addBtn').addEventListener('click', add);
   placeEl.addEventListener('keydown', e=>{ if(e.key==='Enter') add(); });
   nameEl.addEventListener('keydown', e=>{ if(e.key==='Enter') placeEl.focus(); });
+
+  /* まとめてインポート（Excel/テキスト/CSV） */
+  function parseImport(text){
+    return text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(line=>{
+      let parts;
+      if(/[\t,，]/.test(line)) parts=line.split(/[\t,，]/);
+      else if(/[＠@]/.test(line)) parts=line.split(/[＠@]/);
+      else parts=[line];
+      parts=parts.map(s=>s.trim());
+      return { name:parts[0]||'', place:parts[1]||'', qty:Math.max(1, parseInt(parts[2],10)||1) };
+    }).filter(r=>r.name);
+  }
+  function updateImpCount(){ const n=parseImport(importText.value).length; impcount.textContent = n?`${n}件 読み取り`:''; }
+  importText.addEventListener('input', updateImpCount);
+  importFile.addEventListener('change', e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ importText.value=r.result; updateImpCount(); }; r.readAsText(f); });
+  importBtn.addEventListener('click', ()=>{
+    const rows=parseImport(importText.value);
+    if(!rows.length){ toast('読み取れる行が無かった。1行に1つ入れてな🙏'); return; }
+    rows.forEach((r,i)=>items.push({id:Date.now()+'-'+i+'-'+Math.floor(Math.random()*999), name:r.name, place:r.place, qty:r.qty, photo:'', created:Date.now()}));
+    save(); importText.value=''; updateImpCount(); updateSavedNote();
+    toast(`${rows.length}件まとめて登録したで✨`);
+    showView('browse');
+  });
 
   /* ---- 一覧・さがす（部屋フィルタ＋場所別グループ） ---- */
   function renderFchips(){
