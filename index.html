@@ -93,6 +93,15 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.warn{background:var(--warn);}
   .hint{font-size:12px;color:var(--sub);margin-top:9px;text-align:center;}
+  .challenge{padding:15px 18px;}
+  .challenge.done{background:var(--accent-soft);border-color:var(--accent);}
+  .chtitle{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;font-size:15px;letter-spacing:-.01em;}
+  .chtitle .day{color:var(--accent);font-size:13px;font-weight:600;}
+  .chbar{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin:11px 0 9px;}
+  .chbar>div{height:100%;background:var(--accent);border-radius:6px;transition:width .4s;}
+  .chstats{font-size:12.5px;color:var(--sub);}
+  .chstats b{color:var(--ink);font-weight:600;}
+  .chmsg{font-size:12.5px;color:var(--accent);margin-top:6px;font-weight:600;}
   details.import{padding:0;}
   details.import summary{padding:16px 18px;font-weight:600;font-size:15px;cursor:pointer;list-style:none;}
   details.import summary::-webkit-details-marker{display:none;}
@@ -101,6 +110,19 @@
   .impbody textarea{width:100%;min-height:120px;padding:12px 14px;font-size:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font-family:inherit;line-height:1.5;resize:vertical;}
   .imphint{font-size:12px;color:var(--sub);line-height:1.5;}
   .improw{display:flex;align-items:center;gap:12px;margin:11px 0;}
+  .seasons{display:flex;gap:7px;flex-wrap:wrap;}
+  .schip{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:16px;padding:7px 15px;font-size:13px;cursor:pointer;}
+  .schip.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .alertrow{display:flex;gap:10px;}
+  .alertrow>div{flex:1;}
+  .badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;}
+  .badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;border:1px solid currentColor;}
+  .badge.season{color:var(--accent);}
+  .badge.over{color:var(--warn);}
+  .badge.low{color:#c8952a;}
+  .qstep{display:flex;align-items:center;gap:7px;flex:none;}
+  .qstep button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:16px;cursor:pointer;line-height:1;padding:0;}
+  .qstep .qv{min-width:18px;text-align:center;font-size:14px;font-weight:600;}
 </style>
 </head>
 <body>
@@ -116,6 +138,8 @@
   </nav>
 
   <div class="wrap">
+    <div class="card challenge" id="challenge"></div>
+
     <!-- ===== 登録ビュー ===== -->
     <div id="viewRegist">
       <div class="card">
@@ -146,6 +170,20 @@
           </label>
           <div class="preview" id="preview"></div>
         </div>
+        <div class="row">
+          <label>季節（服など・任意）</label>
+          <div class="seasons" id="seasons">
+            <button type="button" class="schip" data-s="春">春</button>
+            <button type="button" class="schip" data-s="夏">夏</button>
+            <button type="button" class="schip" data-s="秋">秋</button>
+            <button type="button" class="schip" data-s="冬">冬</button>
+            <button type="button" class="schip" data-s="通年">通年</button>
+          </div>
+        </div>
+        <div class="row alertrow">
+          <div><label>買いすぎ⚠️（この数以上）</label><input type="number" id="hi" min="1" placeholder="例：トイレ10"></div>
+          <div><label>買い足し🛒（この数以下）</label><input type="number" id="lo" min="0" placeholder="例：2"></div>
+        </div>
         <label class="opt"><input type="checkbox" id="autonum" checked>番号を自動でつける（ワンピース1・2…）</label>
         <label class="opt"><input type="checkbox" id="samePlace">同じ場所で続けて登録（クローゼット一気に）</label>
         <button class="add" id="addBtn">＋ 登録する</button>
@@ -155,7 +193,7 @@
       <details class="card import">
         <summary>📥 まとめてインポート（Excel・テキスト）</summary>
         <div class="impbody">
-          <p class="imphint">1行に1つ。「品名, 場所, 個数」（場所・個数は省略OK）。<br>Excelはセルをコピーして下に貼り付けるだけでOK（タブ区切りも読めるで）。</p>
+          <p class="imphint">1行に1つ。「品名, 場所, 個数」（場所・個数は省略OK）。<br>Excelはセルをコピーして下に貼り付けるだけでOK（タブ区切りも読み込めます）。</p>
           <textarea id="importText" placeholder="ワンピース, リビング / クローゼット1&#10;工具, リビング / テレビ台 / 引出4, 1&#10;喪服 ＠ 寝室 / ウォークイン"></textarea>
           <div class="improw">
             <label class="photobtn">📄 ファイル(.csv/.txt)<input type="file" id="importFile" accept=".csv,.txt" hidden></label>
@@ -175,7 +213,7 @@
         </div>
         <button class="mic" id="voiceSearchBtn" title="音声でさがす" aria-label="音声でさがす">🎙</button>
       </div>
-      <button class="add" id="voiceAddBtn" style="margin:0 0 14px">🎙 声で追加（「品名、場所」と言ってな）</button>
+      <button class="add" id="voiceAddBtn" style="margin:0 0 14px">🎙 声で追加（「品名、場所」と話す）</button>
       <div class="fchips" id="fchips"></div>
       <div class="count" id="count"></div>
       <div class="stat" id="stat"></div>
@@ -193,10 +231,10 @@
   let items = JSON.parse(localStorage.getItem(KEY) || '[]');
   let stats = JSON.parse(localStorage.getItem(SKEY) || '{"found":0,"minutes":0}');
   let rooms = JSON.parse(localStorage.getItem(RKEY) || 'null');
-  let pendingPhoto='', activeRoom=null;
+  let pendingPhoto='', activeRoom=null, seasonSel='';
 
   const $ = id => document.getElementById(id);
-  const nameEl=$('name'), placeEl=$('place'), qtyEl=$('qty'), autonumEl=$('autonum'), samePlaceEl=$('samePlace'),
+  const nameEl=$('name'), placeEl=$('place'), qtyEl=$('qty'), hiEl=$('hi'), loEl=$('lo'), seasonsEl=$('seasons'), autonumEl=$('autonum'), samePlaceEl=$('samePlace'),
         photoEl=$('photo'), previewEl=$('preview'), voiceBtn=$('voiceBtn'),
         roomsEl=$('rooms'), roomNameEl=$('roomName'), roomBtn=$('roomBtn'), savednoteEl=$('savednote'),
         listEl=$('list'), countEl=$('count'), statEl=$('stat'), taphintEl=$('taphint'), fchipsEl=$('fchips'),
@@ -204,10 +242,39 @@
         importText=$('importText'), importFile=$('importFile'), impcount=$('impcount'), importBtn=$('importBtn'),
         tabRegist=$('tabRegist'), tabBrowse=$('tabBrowse'), viewRegist=$('viewRegist'), viewBrowse=$('viewBrowse');
 
-  const cheers=['ええやん！','1個、探し物ゼロに近づいた✨','その調子や😊','登録completed！','コツコツ最強や👏'];
+  const cheers=['登録しました✨','1つ、探し物ゼロに近づきました✨','いい調子です😊','登録できました！','コツコツ続けましょう👏'];
   if(rooms===null){ rooms=['リビング','キッチン','寝室','トイレ','洗面所','玄関']; saveRooms(); }
 
-  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(items)); }catch(e){ toast('保存容量いっぱいかも。写真は少なめにな🙏'); } }
+  /* 30日チャレンジ */
+  const CKEY='homeai_challenge_v1';
+  function dstr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  let challenge=JSON.parse(localStorage.getItem(CKEY)||'null');
+  if(!challenge){ challenge={start:dstr(new Date()), days:{}}; localStorage.setItem(CKEY,JSON.stringify(challenge)); }
+  function saveChallenge(){ localStorage.setItem(CKEY, JSON.stringify(challenge)); }
+  function recordToday(){ const t=dstr(new Date()); challenge.days[t]=(challenge.days[t]||0)+1; saveChallenge(); }
+  function streakCount(){ const days=challenge.days; let s=0,d=new Date(); if(!days[dstr(d)]) d.setDate(d.getDate()-1); while(days[dstr(d)]){ s++; d.setDate(d.getDate()-1); } return s; }
+  function renderChallenge(){
+    const el=document.getElementById('challenge'); if(!el) return;
+    const now=new Date();
+    const dayNum=Math.floor((new Date(dstr(now)+'T00:00:00') - new Date(challenge.start+'T00:00:00'))/86400000)+1;
+    const todayCount=challenge.days[dstr(now)]||0, streak=streakCount(), total=items.length;
+    if(dayNum>30){
+      el.className='card challenge done';
+      el.innerHTML=`<div class="chtitle">🎉 30日達成！おめでとうございます</div>`+
+        `<div class="chstats">登録 <b>${total}</b>件 ・ 探さず発見 <b>${stats.found}</b>回（${fmtMin(stats.minutes)}節約）</div>`+
+        `<div class="chmsg">30日前は探し物だらけ。今は「探せる家」に。ビフォーアフターを投稿しましょう📣</div>`;
+      return;
+    }
+    const pct=Math.min(100,Math.round(Math.max(1,dayNum)/30*100));
+    const msg = todayCount>0 ? `今日は${todayCount}件登録！いい調子です😊` : '今日はまだ0件。1つでもOK、続けることが大切です😊';
+    el.className='card challenge';
+    el.innerHTML=`<div class="chtitle">🎯 30日チャレンジ<span class="day">Day ${Math.max(1,dayNum)} / 30</span></div>`+
+      `<div class="chbar"><div style="width:${pct}%"></div></div>`+
+      `<div class="chstats">登録 <b>${total}</b>件 ・ 連続 <b>${streak}</b>日 ・ 今日 <b>${todayCount}</b>件</div>`+
+      `<div class="chmsg">${msg}</div>`;
+  }
+
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(items)); }catch(e){ toast('保存容量がいっぱいかもしれません。写真は少なめに🙏'); } }
   function saveStats(){ localStorage.setItem(SKEY, JSON.stringify(stats)); }
   function saveRooms(){ localStorage.setItem(RKEY, JSON.stringify(rooms)); }
   function baseName(s){ return s.replace(/\s*\d+\s*$/,'').trim(); }
@@ -232,9 +299,9 @@
   function renderRooms(){
     roomsEl.innerHTML = rooms.length
       ? rooms.map((r,i)=>`<button class="chip" data-i="${i}">${esc(r)}<span class="x" data-del="${i}">×</span></button>`).join('')
-      : '<span style="color:var(--sub);font-size:13px">部屋がまだないで。下で追加してな</span>';
+      : '<span style="color:var(--sub);font-size:13px">部屋がまだありません。下で追加してください</span>';
   }
-  function addRoom(){ let n=roomNameEl.value.trim(); if(!n){ roomNameEl.focus(); return; } rooms.push(uniqueRoom(n)); saveRooms(); roomNameEl.value=''; renderRooms(); toast('部屋を追加したで🏠'); }
+  function addRoom(){ let n=roomNameEl.value.trim(); if(!n){ roomNameEl.focus(); return; } rooms.push(uniqueRoom(n)); saveRooms(); roomNameEl.value=''; renderRooms(); toast('部屋を追加しました🏠'); }
   roomsEl.addEventListener('click', e=>{
     if(e.target.dataset.del!==undefined){ rooms.splice(+e.target.dataset.del,1); saveRooms(); renderRooms(); return; }
     const chip=e.target.closest('.chip'); if(!chip) return;
@@ -242,6 +309,13 @@
   });
   roomBtn.addEventListener('click', addRoom);
   roomNameEl.addEventListener('keydown', e=>{ if(e.key==='Enter') addRoom(); });
+
+  /* 季節チップ（任意・単一選択） */
+  seasonsEl.addEventListener('click', e=>{
+    const b=e.target.closest('.schip'); if(!b) return;
+    seasonSel = (seasonSel===b.dataset.s) ? '' : b.dataset.s;
+    [...seasonsEl.children].forEach(c=>c.classList.toggle('on', c.dataset.s===seasonSel));
+  });
 
   /* ---- 写真（撮る/選ぶ両対応・captureなし） ---- */
   function handlePhoto(file){
@@ -261,34 +335,37 @@
   /* ---- 音声 ---- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   voiceBtn.addEventListener('click', ()=>{
-    if(!SR){ toast('この端末は音声入力に未対応みたい🙏 手入力でな'); return; }
+    if(!SR){ toast('この端末は音声入力に未対応のようです🙏 手入力でお願いします'); return; }
     const rec=new SR(); rec.lang='ja-JP'; rec.interimResults=false; rec.maxAlternatives=1;
-    voiceBtn.classList.add('on'); toast('話してな…🎙（例：ワンピース、リビングのクローゼット1）');
+    voiceBtn.classList.add('on'); toast('話してください…🎙（例：ワンピース、リビングのクローゼット1）');
     rec.onresult=e=>{ let t=e.results[0][0].transcript.trim().replace(/(を)?追加(して)?$/,'').replace(/。$/,'').trim();
       const p=t.split(/[、,，]/);
       if(p.length>=2){ nameEl.value=p[0].trim(); placeEl.value=p.slice(1).join(' ').trim(); } else nameEl.value=t;
-      toast('聞き取ったで。確認して「登録する」押してな😊'); };
-    rec.onerror=()=>toast('うまく聞き取れんかった。もう一回試してな');
+      toast('聞き取りました。確認して「登録する」を押してください😊'); };
+    rec.onerror=()=>toast('うまく聞き取れませんでした。もう一度お試しください');
     rec.onend=()=>voiceBtn.classList.remove('on');
     rec.start();
   });
 
   /* ---- 登録 ---- */
-  function updateSavedNote(){ savednoteEl.innerHTML = items.length ? `いま <b>${items.length}</b>件 登録済み → 「一覧・さがす」タブで見れるで` : 'まだ0件。1個登録してみよ😊'; }
+  function updateSavedNote(){ savednoteEl.innerHTML = items.length ? `現在 <b>${items.length}</b>件 登録済み → 「一覧・さがす」タブで確認できます` : 'まだ0件です。1つ登録してみましょう😊'; renderChallenge(); }
   function add(){
     let name=nameEl.value.trim(); const place=placeEl.value.trim();
     const qty=Math.max(1, parseInt(qtyEl.value,10)||1);
-    if(!name){ toast('なにを登録する？品名を入れてな'); nameEl.focus(); return; }
+    let hi=hiEl.value.trim()===''?null:parseInt(hiEl.value,10); if(Number.isNaN(hi)||hi<1) hi=null;
+    let lo=loEl.value.trim()===''?null:parseInt(loEl.value,10); if(Number.isNaN(lo)) lo=null;
+    if(!name){ toast('品名を入力してください'); nameEl.focus(); return; }
     const base=baseName(name);
     if(autonumEl.checked){ name = base + nextNumber(base); }
-    const totalAfter = totalQty(base)+qty;
-    items.push({id:Date.now()+''+Math.floor(Math.random()*999), name, place, qty, photo:pendingPhoto, created:Date.now()});
-    save();
-    nameEl.value=''; qtyEl.value='';
+    items.push({id:Date.now()+''+Math.floor(Math.random()*999), name, place, qty, photo:pendingPhoto, season:seasonSel, hi, lo, created:Date.now()});
+    save(); recordToday();
+    nameEl.value=''; qtyEl.value=''; hiEl.value=''; loEl.value='';
     if(!samePlaceEl.checked) placeEl.value='';
+    seasonSel=''; [...seasonsEl.children].forEach(c=>c.classList.remove('on'));
     pendingPhoto=''; previewEl.innerHTML=''; photoEl.value=''; nameEl.focus();
     updateSavedNote();
-    if(totalAfter>=BUY_WARN) toast(`⚠️ ${base}、合計${totalAfter}個！買いすぎ注意やで😂`, true);
+    if(hi!=null && qty>=hi) toast(`⚠️ ${base}、${qty}個。買いすぎ注意です😂`, true);
+    else if(lo!=null && qty<=lo) toast(`🛒 ${base}、残り${qty}個。そろそろ買い足しです`);
     else toast(cheers[Math.floor(Math.random()*cheers.length)]);
   }
   $('addBtn').addEventListener('click', add);
@@ -311,10 +388,10 @@
   importFile.addEventListener('change', e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ importText.value=r.result; updateImpCount(); }; r.readAsText(f); });
   importBtn.addEventListener('click', ()=>{
     const rows=parseImport(importText.value);
-    if(!rows.length){ toast('読み取れる行が無かった。1行に1つ入れてな🙏'); return; }
+    if(!rows.length){ toast('読み取れる行がありませんでした。1行に1つ入力してください🙏'); return; }
     rows.forEach((r,i)=>items.push({id:Date.now()+'-'+i+'-'+Math.floor(Math.random()*999), name:r.name, place:r.place, qty:r.qty, photo:'', created:Date.now()}));
-    save(); importText.value=''; updateImpCount(); updateSavedNote();
-    toast(`${rows.length}件まとめて登録したで✨`);
+    save(); recordToday(); importText.value=''; updateImpCount(); updateSavedNote();
+    toast(`${rows.length}件まとめて登録しました✨`);
     showView('browse');
   });
 
@@ -329,9 +406,20 @@
     renderBrowse();
   });
   function itemRow(it){
+    const q=it.qty||1;
+    const badges=[];
+    if(it.season) badges.push(`<span class="badge season">${esc(it.season)}</span>`);
+    if(it.hi!=null && q>=it.hi) badges.push(`<span class="badge over">⚠️買いすぎ</span>`);
+    if(it.lo!=null && q<=it.lo) badges.push(`<span class="badge low">🛒買い足し</span>`);
+    const bd = badges.length?`<div class="badges">${badges.join('')}</div>`:'';
     return `<li data-id="${it.id}">
       ${it.photo?`<img class="thumb" src="${it.photo}" alt="">`:''}
-      <div class="body"><div class="name">${esc(it.name)}${(it.qty&&it.qty>1)?`<span class="qtybadge">×${it.qty}</span>`:''}</div></div>
+      <div class="body"><div class="name">${esc(it.name)}</div>${bd}</div>
+      <div class="qstep">
+        <button class="qbtn" data-act="dec" data-id="${it.id}" aria-label="減らす">−</button>
+        <span class="qv">${q}</span>
+        <button class="qbtn" data-act="inc" data-id="${it.id}" aria-label="増やす">＋</button>
+      </div>
       <button class="del" data-id="${it.id}" aria-label="削除">🗑️</button>
     </li>`;
   }
@@ -339,15 +427,15 @@
     renderFchips();
     countEl.innerHTML = items.length ? `<b>${items.length}</b>件 登録済み` : '';
     statEl.innerHTML = stats.found>0 ? `⏱ ${stats.found}回 探さず発見・${fmtMin(stats.minutes)}を節約✨` : '';
-    taphintEl.textContent = items.length ? '見つけたモノをタップ→⏱ 節約時間がたまるで' : '';
+    taphintEl.textContent = items.length ? '見つけたモノをタップ→⏱ 節約時間がたまります' : '';
     const q=searchEl.value.trim().toLowerCase();
     let shown=items.filter(it=>{
-      if(q && !((it.name+' '+it.place).toLowerCase().includes(q))) return false;
+      if(q && !((it.name+' '+it.place+' '+(it.season||'')).toLowerCase().includes(q))) return false;
       if(activeRoom && !((it.place||'').includes(activeRoom))) return false;
       return true;
     });
-    if(!items.length){ listEl.innerHTML=`<div class="empty"><div class="big">📦</div>まだ何もないで。<br>「➕登録」タブから追加してな😊</div>`; return; }
-    if(!shown.length){ listEl.innerHTML=`<div class="empty">条件に合うモノが無かった🤔<br>検索や部屋フィルタを変えてみて</div>`; return; }
+    if(!items.length){ listEl.innerHTML=`<div class="empty"><div class="big">📦</div>まだ何もありません。<br>「➕登録」タブから追加してください😊</div>`; return; }
+    if(!shown.length){ listEl.innerHTML=`<div class="empty">条件に合うものがありませんでした🤔<br>検索や部屋フィルタを変えてみてください</div>`; return; }
     // 2階層グループ：部屋（大枠）→ その中の場所（テレビ台/引出 など）
     const rmap={};
     shown.forEach(it=>{
@@ -372,7 +460,7 @@
   voiceSearchBtn.addEventListener('click', ()=>{
     if(!SR){ toast('この端末は音声に未対応みたい🙏'); return; }
     const rec=new SR(); rec.lang='ja-JP'; rec.interimResults=false; rec.maxAlternatives=1;
-    voiceSearchBtn.classList.add('on'); toast('聞くで…🎙（例：パスポート どこ？）');
+    voiceSearchBtn.classList.add('on'); toast('聞いています…🎙（例：パスポート どこ？）');
     rec.onresult=e=>{
       let t=e.results[0][0].transcript.trim()
         .replace(/はどこ.*$/,'').replace(/どこ.*$/,'').replace(/を?探して.*$/,'').replace(/教えて.*$/,'')
@@ -381,12 +469,12 @@
       const q=t.toLowerCase();
       const hit=items.find(it=>(it.name+' '+it.place).toLowerCase().includes(q));
       if(hit){
-        const msg = hit.place ? `${hit.name}は、${hit.place}にあるで` : `${hit.name}は登録されてるけど、場所が未記入や`;
+        const msg = hit.place ? `${hit.name}は、${hit.place}にあります` : `${hit.name}は登録されていますが、場所が未記入です`;
         toast(`${hit.name} → ${hit.place||'場所未記入'}`);
         if('speechSynthesis' in window){ const u=new SpeechSynthesisUtterance(msg); u.lang='ja-JP'; speechSynthesis.cancel(); speechSynthesis.speak(u); }
-      } else { toast(`「${t}」は見つからんかった🤔`); }
+      } else { toast(`「${t}」は見つかりませんでした🤔`); }
     };
-    rec.onerror=()=>toast('うまく聞き取れんかった。もう一回');
+    rec.onerror=()=>toast('うまく聞き取れませんでした。もう一度');
     rec.onend=()=>voiceSearchBtn.classList.remove('on');
     rec.start();
   });
@@ -394,28 +482,38 @@
   voiceAddBtn.addEventListener('click', ()=>{
     if(!SR){ toast('この端末は音声に未対応みたい🙏'); return; }
     const rec=new SR(); rec.lang='ja-JP'; rec.interimResults=false; rec.maxAlternatives=1;
-    toast('話してな…🎙（例：ワンピース、リビングのクローゼット1）');
+    toast('話してください…🎙（例：ワンピース、リビングのクローゼット1）');
     rec.onresult=e=>{
       let t=e.results[0][0].transcript.trim().replace(/(を)?追加(して)?$/,'').replace(/。$/,'').trim();
       const p=t.split(/[、,，]/);
       let nm=(p[0]||'').trim(), pl=p.slice(1).join(' ').trim();
-      if(!nm){ toast('品名が聞き取れんかった。もう一回'); return; }
+      if(!nm){ toast('品名が聞き取れませんでした。もう一度'); return; }
       const base=baseName(nm);
       if(autonumEl.checked) nm=base+nextNumber(base);
       items.push({id:Date.now()+''+Math.floor(Math.random()*999), name:nm, place:pl, qty:1, photo:'', created:Date.now()});
-      save(); renderBrowse(); updateSavedNote();
-      toast(`「${nm}」を ${pl||'（場所未記入）'} に登録したで✨`);
+      save(); recordToday(); renderBrowse(); updateSavedNote();
+      toast(`「${nm}」を ${pl||'（場所未記入）'} に登録しました✨`);
     };
-    rec.onerror=()=>toast('うまく聞き取れんかった。もう一回');
+    rec.onerror=()=>toast('うまく聞き取れませんでした。もう一度');
     rec.start();
   });
   listEl.addEventListener('click', e=>{
     const del=e.target.closest('.del');
     if(del){ items=items.filter(it=>it.id!==del.dataset.id); save(); renderBrowse(); updateSavedNote(); return; }
+    const qb=e.target.closest('.qbtn');
+    if(qb){
+      const it=items.find(x=>x.id===qb.dataset.id); if(!it) return;
+      it.qty=Math.max(0,(it.qty||1)+(qb.dataset.act==='inc'?1:-1));
+      save(); renderBrowse();
+      const base=baseName(it.name);
+      if(it.hi!=null && it.qty>=it.hi) toast(`⚠️ ${base}、${it.qty}個。買いすぎです😂`, true);
+      else if(it.lo!=null && it.qty<=it.lo) toast(`🛒 ${base}、残り${it.qty}個。買い足しです`);
+      return;
+    }
     const li=e.target.closest('li'); if(!li||!li.dataset.id) return;
     stats.found++; stats.minutes+=MIN_PER_FIND; saveStats();
     statEl.innerHTML=`⏱ ${stats.found}回 探さず発見・${fmtMin(stats.minutes)}を節約✨`;
-    toast(`見つけた！⏱ 約${MIN_PER_FIND}分の節約（累計${stats.found}回）✨`);
+    toast(`見つかりました！⏱ 約${MIN_PER_FIND}分の節約（累計${stats.found}回）✨`);
   });
 
   renderRooms(); updateSavedNote(); showView('regist');
