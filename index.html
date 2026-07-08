@@ -95,7 +95,8 @@
   .toast.warn{background:var(--warn);}
   .scanwrap{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:20;display:flex;align-items:center;justify-content:center;padding:18px;}
   .scanbox{background:var(--card);border-radius:18px;padding:16px;max-width:360px;width:100%;text-align:center;}
-  #reader{width:100%;border-radius:12px;overflow:hidden;background:#000;margin-bottom:12px;}
+  #reader{width:100%;border-radius:12px;overflow:hidden;background:#000;margin-bottom:12px;min-height:240px;}
+  #reader video{width:100%!important;height:auto!important;display:block;object-fit:cover;}
   .scannote{font-size:13px;color:var(--sub);margin:10px 0 12px;}
   .scanbox .cancel{border:none;background:var(--accent);color:#fff;border-radius:11px;padding:11px 22px;font-size:15px;font-weight:600;cursor:pointer;}
   .hint{font-size:12px;color:var(--sub);margin-top:9px;text-align:center;}
