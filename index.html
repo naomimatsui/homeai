@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>HomeAI — 探し物ゼロの家へ</title>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
   :root{
     --bg:#f5f5f7; --card:#ffffff; --ink:#1d1d1f; --sub:#6e6e73;
@@ -93,15 +92,9 @@
     opacity:0;pointer-events:none;transition:.25s;white-space:nowrap;z-index:9;max-width:90%;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.warn{background:var(--warn);}
-  .scanwrap{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:20;display:flex;align-items:center;justify-content:center;padding:18px;}
-  .scanbox{background:var(--card);border-radius:18px;padding:16px;max-width:360px;width:100%;text-align:center;}
-  #reader{width:100%;}
-  #reader video{width:100%!important;height:auto!important;display:block;border-radius:10px;}
-  #reader img{display:none;}
-  #reader__dashboard_section_csr button{background:var(--accent)!important;color:#fff!important;border:none!important;border-radius:10px!important;padding:11px 18px!important;font-size:15px!important;font-weight:600!important;}
-  #reader__dashboard_section_fsr,#reader a,#reader__header_message,#reader img{display:none!important;}
-  #reader__dashboard{border:none!important;padding:0!important;}
-  #reader select{padding:9px;border-radius:9px;margin:8px 0;max-width:100%;}
+  .scanwrap{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;z-index:20;}
+  .scanbox{background:var(--card);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px;max-height:85vh;overflow-y:auto;text-align:center;}
+  #reader{width:100%;border-radius:14px;overflow:hidden;margin-bottom:12px;background:#000;}
   .scannote{font-size:13px;color:var(--sub);margin:10px 0 12px;}
   .scanbox .cancel{border:none;background:var(--accent);color:#fff;border-radius:11px;padding:11px 22px;font-size:15px;font-weight:600;cursor:pointer;}
   .hint{font-size:12px;color:var(--sub);margin-top:9px;text-align:center;}
@@ -189,7 +182,6 @@
           <label class="photobtn">📷 写真（撮る/選ぶ）
             <input type="file" id="photo" accept="image/*" hidden>
           </label>
-          <button type="button" class="photobtn" id="scanRegBtn">🔖 バーコード</button>
           <div class="preview" id="preview"></div>
         </div>
         <div class="row">
@@ -235,8 +227,7 @@
         </div>
         <button class="mic" id="voiceSearchBtn" title="音声でさがす" aria-label="音声でさがす">🎙</button>
       </div>
-      <button class="add" id="voiceAddBtn" style="margin:0 0 10px">🎙 声で追加（「品名、場所」と話す）</button>
-      <button class="add" id="scanSearchBtn" style="margin:0 0 14px">🔖 バーコードで探す（店で「家にある？」）</button>
+      <button class="add" id="voiceAddBtn" style="margin:0 0 14px">🎙 声で追加（「品名、場所」と話す）</button>
       <div class="fchips" id="fchips"></div>
       <div class="count" id="count"></div>
       <div class="stat" id="stat"></div>
@@ -269,15 +260,6 @@
     </div>
   </div>
 
-  <div class="scanwrap" id="scanwrap" hidden>
-    <div class="scanbox">
-      <h3 style="margin:0 0 6px;font-size:16px;">バーコードを読み取る</h3>
-      <div id="reader"></div>
-      <div class="scannote">JANコード（バーコード）にカメラを向けてください</div>
-      <button class="cancel" id="scanCancel">キャンセル</button>
-    </div>
-  </div>
-
   <div class="toast" id="toast"></div>
 
 <script>
@@ -289,7 +271,7 @@
   let rooms = JSON.parse(localStorage.getItem(RKEY) || 'null');
   let pendingPhoto='', activeRoom=null, seasonSel='', pendingBarcode='';
   let barcodeDict=JSON.parse(localStorage.getItem('homeai_barcode_dict_v1')||'{}');
-  let html5QrScanner=null, scanMode='register';
+  let html5QrCode=null, scanMode='register';
 
   const $ = id => document.getElementById(id);
   const nameEl=$('name'), placeEl=$('place'), qtyEl=$('qty'), hiEl=$('hi'), loEl=$('lo'), seasonsEl=$('seasons'), autonumEl=$('autonum'), samePlaceEl=$('samePlace'),
@@ -389,13 +371,13 @@
         scanSearchBtn=document.getElementById('scanSearchBtn'), scanCancel=document.getElementById('scanCancel');
   function saveDict(){ localStorage.setItem('homeai_barcode_dict_v1', JSON.stringify(barcodeDict)); }
   function openScanner(mode){
-    if(typeof Html5QrcodeScanner==='undefined'){ toast('カメラライブラリの読み込みに失敗。通信環境を確認してください🙏'); return; }
+    if(typeof Html5Qrcode==='undefined'){ toast('カメラライブラリの読み込みに失敗。通信環境を確認してください🙏'); return; }
     scanMode=mode; scanwrap.hidden=false;
-    let done=false;
-    html5QrScanner=new Html5QrcodeScanner('reader',{fps:10,qrbox:220,rememberLastUsedCamera:true},false);
-    html5QrScanner.render(function(code){ if(done) return; done=true; onScan(code); }, function(){});
+    html5QrCode=new Html5Qrcode('reader');
+    html5QrCode.start({facingMode:'environment'},{fps:10,qrbox:220}, function(code){ onScan(code); }, function(){})
+      .catch(function(err){ toast('カメラを起動できませんでした：'+((err&&err.name)||err)); });
   }
-  function closeScanner(){ if(html5QrScanner){ try{ html5QrScanner.clear(); }catch(e){} html5QrScanner=null; } scanwrap.hidden=true; }
+  function closeScanner(){ if(html5QrCode){ html5QrCode.stop().then(function(){ html5QrCode.clear(); html5QrCode=null; }).catch(function(){ html5QrCode=null; }); } scanwrap.hidden=true; }
   function onScan(code){
     closeScanner();
     if(scanMode==='register'){
