@@ -102,6 +102,14 @@
   .chstats{font-size:12.5px;color:var(--sub);}
   .chstats b{color:var(--ink);font-weight:600;}
   .chmsg{font-size:12.5px;color:var(--accent);margin-top:6px;font-weight:600;}
+  .plantitle{font-weight:700;font-size:16px;letter-spacing:-.01em;margin-bottom:6px;}
+  .planprog{font-size:14px;color:var(--accent);font-weight:700;margin:8px 0 12px;}
+  .planrow{display:flex;align-items:center;gap:7px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .planrow input[type=checkbox]{width:21px;height:21px;accent-color:var(--accent);flex:none;}
+  .planrow .ptext{flex:1;min-width:0;border:none;background:transparent;font-size:14px;color:var(--ink);padding:5px 4px;outline:none;border-radius:6px;}
+  .planrow .ptext:focus{background:var(--bg);}
+  .planrow.done .ptext{text-decoration:line-through;color:var(--sub);}
+  .planrow .pbtn{border:none;background:transparent;color:var(--sub);font-size:15px;cursor:pointer;padding:4px 4px;flex:none;}
   details.import{padding:0;}
   details.import summary{padding:16px 18px;font-weight:600;font-size:15px;cursor:pointer;list-style:none;}
   details.import summary::-webkit-details-marker{display:none;}
@@ -134,7 +142,8 @@
 
   <nav class="tabs">
     <button id="tabRegist" class="active">➕ 登録</button>
-    <button id="tabBrowse">📋 一覧・さがす</button>
+    <button id="tabBrowse">📋 一覧</button>
+    <button id="tabPlan">🎯 プラン</button>
   </nav>
 
   <div class="wrap">
@@ -220,6 +229,20 @@
       <div class="taphint" id="taphint"></div>
       <div id="list"></div>
     </div>
+
+    <!-- ===== 30日プランビュー ===== -->
+    <div id="viewPlan" hidden>
+      <div class="card">
+        <div class="plantitle">🎯 30日で「探し物ゼロ」プラン</div>
+        <p class="imphint">1日ずつでも、順番はバラバラでもOK。サボった分は翌日でも大丈夫。<br><b>30日で全部チェック</b>できたら達成🎉（↑↓で順番変更・自由に編集/追加）</p>
+        <div class="planprog" id="planprog"></div>
+        <div id="planlist"></div>
+        <div class="roomadd">
+          <input type="text" id="planNew" placeholder="やることを追加（例：ベランダ）">
+          <button class="roombtn" id="planAddBtn" aria-label="追加">＋</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -261,7 +284,7 @@
     if(dayNum>30){
       el.className='card challenge done';
       el.innerHTML=`<div class="chtitle">🎉 30日達成！おめでとうございます</div>`+
-        `<div class="chstats">登録 <b>${total}</b>件 ・ 探さず発見 <b>${stats.found}</b>回（${fmtMin(stats.minutes)}節約）</div>`+
+        `<div class="chstats">登録 <b>${total}</b>件 ・ 探さず発見 <b>${stats.found}</b>回（${fmtMin(stats.minutes)}節約）・ 🎯プラン <b>${planDoneCount()}/${plan.length}</b></div>`+
         `<div class="chmsg">30日前は探し物だらけ。今は「探せる家」に。ビフォーアフターを投稿しましょう📣</div>`;
       return;
     }
@@ -270,9 +293,52 @@
     el.className='card challenge';
     el.innerHTML=`<div class="chtitle">🎯 30日チャレンジ<span class="day">Day ${Math.max(1,dayNum)} / 30</span></div>`+
       `<div class="chbar"><div style="width:${pct}%"></div></div>`+
-      `<div class="chstats">登録 <b>${total}</b>件 ・ 連続 <b>${streak}</b>日 ・ 今日 <b>${todayCount}</b>件</div>`+
+      `<div class="chstats">登録 <b>${total}</b>件 ・ 連続 <b>${streak}</b>日 ・ 🎯プラン <b>${planDoneCount()}/${plan.length}</b></div>`+
       `<div class="chmsg">${msg}</div>`;
   }
+
+  /* 30日プラン（チェックリスト・順番自由） */
+  const PKEY='homeai_plan_v1';
+  const planlistEl=document.getElementById('planlist'), planprogEl=document.getElementById('planprog'),
+        planNewEl=document.getElementById('planNew'), planAddBtn=document.getElementById('planAddBtn'),
+        viewPlan=document.getElementById('viewPlan'), tabPlan=document.getElementById('tabPlan');
+  let plan=JSON.parse(localStorage.getItem(PKEY)||'null');
+  if(plan===null){
+    plan=['リビング（見えている物）','リビングの収納・引き出し','テレビ台まわり','キッチン（食器）','キッチン（鍋・調理器具）','キッチン（食品ストック）','冷蔵庫・調味料','洗面所の収納','洗面台の下','トイレの収納','お風呂まわり','寝室クローゼット','ウォークインクローゼット（服）','ウォークインクローゼット（バッグ・小物）','仕事部屋のクローゼット','喪服・礼服','季節物の服の入れ替え','靴・シューズ','下着・靴下・ストッキング','寝具・タオル類','薬・救急セット','重要書類・貴重品（パスポート等）','印鑑・通帳・保険証券','アクセサリー','文房具・事務用品','掃除・消耗品ストック（ティッシュ・洗剤）','電池・工具・コード類','本・CD・DVD・趣味','思い出・写真・推しグッズ','玄関・傘・アウトドア']
+      .map(t=>({text:t,done:false}));
+    localStorage.setItem(PKEY,JSON.stringify(plan));
+  }
+  function savePlan(){ localStorage.setItem(PKEY, JSON.stringify(plan)); }
+  function planDoneCount(){ return plan.filter(p=>p.done).length; }
+  function renderPlan(){
+    planprogEl.innerHTML=`✅ <b>${planDoneCount()}</b> / ${plan.length} 完了`;
+    planlistEl.innerHTML=plan.map((p,i)=>`
+      <div class="planrow ${p.done?'done':''}" data-i="${i}">
+        <input type="checkbox" ${p.done?'checked':''} data-act="chk">
+        <input class="ptext" value="${esc(p.text)}" data-act="txt">
+        <button class="pbtn" data-act="up" aria-label="上へ">↑</button>
+        <button class="pbtn" data-act="down" aria-label="下へ">↓</button>
+        <button class="pbtn" data-act="del" aria-label="削除">🗑️</button>
+      </div>`).join('');
+  }
+  planlistEl.addEventListener('click', e=>{
+    const b=e.target.closest('.pbtn'); if(!b) return;
+    const i=+e.target.closest('.planrow').dataset.i, act=b.dataset.act;
+    if(act==='del') plan.splice(i,1);
+    else if(act==='up' && i>0){ const t=plan[i-1]; plan[i-1]=plan[i]; plan[i]=t; }
+    else if(act==='down' && i<plan.length-1){ const t=plan[i+1]; plan[i+1]=plan[i]; plan[i]=t; }
+    savePlan(); renderPlan(); renderChallenge();
+  });
+  planlistEl.addEventListener('change', e=>{
+    const row=e.target.closest('.planrow'); if(!row) return; const i=+row.dataset.i;
+    if(e.target.dataset.act==='chk'){ plan[i].done=e.target.checked; savePlan(); renderPlan(); renderChallenge();
+      if(planDoneCount()===plan.length && plan.length) toast('🎉 プラン全部完了！探し物ゼロの家、達成です！'); }
+    else if(e.target.dataset.act==='txt'){ plan[i].text=e.target.value; savePlan(); }
+  });
+  function addPlan(){ const t=planNewEl.value.trim(); if(!t) return; plan.push({text:t,done:false}); savePlan(); planNewEl.value=''; renderPlan(); renderChallenge(); }
+  planAddBtn.addEventListener('click', addPlan);
+  planNewEl.addEventListener('keydown', e=>{ if(e.key==='Enter') addPlan(); });
+  tabPlan.addEventListener('click',()=>showView('plan'));
 
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(items)); }catch(e){ toast('保存容量がいっぱいかもしれません。写真は少なめに🙏'); } }
   function saveStats(){ localStorage.setItem(SKEY, JSON.stringify(stats)); }
@@ -287,10 +353,10 @@
 
   /* ---- タブ ---- */
   function showView(v){
-    const b = v==='browse';
-    viewRegist.hidden=b; viewBrowse.hidden=!b;
-    tabRegist.classList.toggle('active',!b); tabBrowse.classList.toggle('active',b);
-    if(b) renderBrowse();
+    viewRegist.hidden=v!=='regist'; viewBrowse.hidden=v!=='browse'; viewPlan.hidden=v!=='plan';
+    tabRegist.classList.toggle('active',v==='regist'); tabBrowse.classList.toggle('active',v==='browse'); tabPlan.classList.toggle('active',v==='plan');
+    if(v==='browse') renderBrowse();
+    if(v==='plan') renderPlan();
   }
   tabRegist.addEventListener('click',()=>showView('regist'));
   tabBrowse.addEventListener('click',()=>showView('browse'));
