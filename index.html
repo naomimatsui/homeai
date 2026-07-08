@@ -242,6 +242,16 @@
           <button class="roombtn" id="planAddBtn" aria-label="追加">＋</button>
         </div>
       </div>
+
+      <details class="card import">
+        <summary>📋 プランをまとめて入力（貼り付け）</summary>
+        <div class="impbody">
+          <p class="imphint">1行に1つ。Claudeが作ったプランをそのまま貼り付けてOK（先頭の番号や記号は自動で除去）。</p>
+          <textarea id="planImport" placeholder="リビング（見える物）&#10;リビングの収納・引き出し&#10;キッチン（食器）"></textarea>
+          <label class="opt"><input type="checkbox" id="planReplace" checked>今のプランを置き換える（チェックを外すと追加）</label>
+          <button class="add" id="planImportBtn">この内容をプランに反映</button>
+        </div>
+      </details>
     </div>
   </div>
 
@@ -301,7 +311,8 @@
   const PKEY='homeai_plan_v1';
   const planlistEl=document.getElementById('planlist'), planprogEl=document.getElementById('planprog'),
         planNewEl=document.getElementById('planNew'), planAddBtn=document.getElementById('planAddBtn'),
-        viewPlan=document.getElementById('viewPlan'), tabPlan=document.getElementById('tabPlan');
+        viewPlan=document.getElementById('viewPlan'), tabPlan=document.getElementById('tabPlan'),
+        planImportEl=document.getElementById('planImport'), planReplaceEl=document.getElementById('planReplace'), planImportBtn=document.getElementById('planImportBtn');
   let plan=JSON.parse(localStorage.getItem(PKEY)||'null');
   if(plan===null){
     plan=['リビング（見えている物）','リビングの収納・引き出し','テレビ台まわり','キッチン（食器）','キッチン（鍋・調理器具）','キッチン（食品ストック）','冷蔵庫・調味料','洗面所の収納','洗面台の下','トイレの収納','お風呂まわり','寝室クローゼット','ウォークインクローゼット（服）','ウォークインクローゼット（バッグ・小物）','仕事部屋のクローゼット','喪服・礼服','季節物の服の入れ替え','靴・シューズ','下着・靴下・ストッキング','寝具・タオル類','薬・救急セット','重要書類・貴重品（パスポート等）','印鑑・通帳・保険証券','アクセサリー','文房具・事務用品','掃除・消耗品ストック（ティッシュ・洗剤）','電池・工具・コード類','本・CD・DVD・趣味','思い出・写真・推しグッズ','玄関・傘・アウトドア']
@@ -338,6 +349,14 @@
   function addPlan(){ const t=planNewEl.value.trim(); if(!t) return; plan.push({text:t,done:false}); savePlan(); planNewEl.value=''; renderPlan(); renderChallenge(); }
   planAddBtn.addEventListener('click', addPlan);
   planNewEl.addEventListener('keydown', e=>{ if(e.key==='Enter') addPlan(); });
+  planImportBtn.addEventListener('click', ()=>{
+    const lines=planImportEl.value.split(/\r?\n/).map(s=>s.replace(/^\s*[-・*●▪️\d０-９.．、)）]+\s*/,'').trim()).filter(Boolean);
+    if(!lines.length){ toast('入力が空です'); return; }
+    const arr=lines.map(t=>({text:t,done:false}));
+    plan = planReplaceEl.checked ? arr : plan.concat(arr);
+    savePlan(); planImportEl.value=''; renderPlan(); renderChallenge();
+    toast(`プランを${planReplaceEl.checked?'作成':'追加'}しました（${lines.length}項目）✨`);
+  });
   tabPlan.addEventListener('click',()=>showView('plan'));
 
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(items)); }catch(e){ toast('保存容量がいっぱいかもしれません。写真は少なめに🙏'); } }
