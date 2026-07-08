@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>HomeAI — 探し物ゼロの家へ</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
   :root{
     --bg:#f5f5f7; --card:#ffffff; --ink:#1d1d1f; --sub:#6e6e73;
@@ -92,6 +93,11 @@
     opacity:0;pointer-events:none;transition:.25s;white-space:nowrap;z-index:9;max-width:90%;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.warn{background:var(--warn);}
+  .scanwrap{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:20;display:flex;align-items:center;justify-content:center;padding:18px;}
+  .scanbox{background:var(--card);border-radius:18px;padding:16px;max-width:360px;width:100%;text-align:center;}
+  #reader{width:100%;border-radius:12px;overflow:hidden;}
+  .scannote{font-size:13px;color:var(--sub);margin:10px 0 12px;}
+  .scanbox .cancel{border:none;background:var(--accent);color:#fff;border-radius:11px;padding:11px 22px;font-size:15px;font-weight:600;cursor:pointer;}
   .hint{font-size:12px;color:var(--sub);margin-top:9px;text-align:center;}
   .challenge{padding:15px 18px;}
   .challenge.done{background:var(--accent-soft);border-color:var(--accent);}
@@ -177,6 +183,7 @@
           <label class="photobtn">📷 写真（撮る/選ぶ）
             <input type="file" id="photo" accept="image/*" hidden>
           </label>
+          <button type="button" class="photobtn" id="scanRegBtn">🔖 バーコード</button>
           <div class="preview" id="preview"></div>
         </div>
         <div class="row">
@@ -222,7 +229,8 @@
         </div>
         <button class="mic" id="voiceSearchBtn" title="音声でさがす" aria-label="音声でさがす">🎙</button>
       </div>
-      <button class="add" id="voiceAddBtn" style="margin:0 0 14px">🎙 声で追加（「品名、場所」と話す）</button>
+      <button class="add" id="voiceAddBtn" style="margin:0 0 10px">🎙 声で追加（「品名、場所」と話す）</button>
+      <button class="add" id="scanSearchBtn" style="margin:0 0 14px">🔖 バーコードで探す（店で「家にある？」）</button>
       <div class="fchips" id="fchips"></div>
       <div class="count" id="count"></div>
       <div class="stat" id="stat"></div>
@@ -255,6 +263,15 @@
     </div>
   </div>
 
+  <div class="scanwrap" id="scanwrap" hidden>
+    <div class="scanbox">
+      <h3 style="margin:0 0 6px;font-size:16px;">バーコードを読み取る</h3>
+      <div id="reader"></div>
+      <div class="scannote">JANコード（バーコード）にカメラを向けてください</div>
+      <button class="cancel" id="scanCancel">キャンセル</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
 <script>
@@ -264,7 +281,9 @@
   let items = JSON.parse(localStorage.getItem(KEY) || '[]');
   let stats = JSON.parse(localStorage.getItem(SKEY) || '{"found":0,"minutes":0}');
   let rooms = JSON.parse(localStorage.getItem(RKEY) || 'null');
-  let pendingPhoto='', activeRoom=null, seasonSel='';
+  let pendingPhoto='', activeRoom=null, seasonSel='', pendingBarcode='';
+  let barcodeDict=JSON.parse(localStorage.getItem('homeai_barcode_dict_v1')||'{}');
+  let html5QrCode=null, scanMode='register';
 
   const $ = id => document.getElementById(id);
   const nameEl=$('name'), placeEl=$('place'), qtyEl=$('qty'), hiEl=$('hi'), loEl=$('lo'), seasonsEl=$('seasons'), autonumEl=$('autonum'), samePlaceEl=$('samePlace'),
@@ -359,6 +378,38 @@
   });
   tabPlan.addEventListener('click',()=>showView('plan'));
 
+  /* バーコード（html5-qrcode） */
+  const scanwrap=document.getElementById('scanwrap'), scanRegBtn=document.getElementById('scanRegBtn'),
+        scanSearchBtn=document.getElementById('scanSearchBtn'), scanCancel=document.getElementById('scanCancel');
+  function saveDict(){ localStorage.setItem('homeai_barcode_dict_v1', JSON.stringify(barcodeDict)); }
+  function openScanner(mode){
+    if(typeof Html5Qrcode==='undefined'){ toast('カメラライブラリの読み込みに失敗。通信環境を確認してください🙏'); return; }
+    scanMode=mode; scanwrap.hidden=false;
+    html5QrCode=new Html5Qrcode('reader');
+    html5QrCode.start({facingMode:'environment'},{fps:10,qrbox:{width:250,height:160}}, onScan, ()=>{})
+      .catch(()=>{ toast('カメラを起動できませんでした（カメラ許可を確認してください）'); closeScanner(); });
+  }
+  function closeScanner(){ if(html5QrCode){ html5QrCode.stop().catch(()=>{}).then(()=>{ if(html5QrCode) html5QrCode.clear(); html5QrCode=null; }); } scanwrap.hidden=true; }
+  function onScan(code){
+    closeScanner();
+    if(scanMode==='register'){
+      pendingBarcode=code; if(scanRegBtn) scanRegBtn.textContent='🔖 読取済 ✓';
+      if(barcodeDict[code]) nameEl.value=barcodeDict[code];
+      const same=items.filter(it=>it.barcode===code);
+      if(same.length){ const tot=same.reduce((s,it)=>s+(it.qty||1),0); toast(`⚠️ この商品、すでに合計${tot}個あります（買いすぎ注意）`, tot>=5); }
+      else toast(barcodeDict[code]?`「${barcodeDict[code]}」を読み取りました。場所を入れて登録を`:'新しい商品です。品名と場所を入れて登録を');
+      showView('regist'); nameEl.focus();
+    } else {
+      const hits=items.filter(it=>it.barcode===code);
+      showView('browse');
+      if(hits.length){ const it=hits[0], tot=hits.reduce((s,x)=>s+(x.qty||1),0); searchEl.value=barcodeDict[code]||it.name; renderBrowse(); toast(`${it.name}は ${it.place||'場所未記入'} にあります（合計${tot}個）`); }
+      else { searchEl.value=''; renderBrowse(); toast('未登録です。家には無いかも（買ってOK）🛒'); }
+    }
+  }
+  if(scanRegBtn) scanRegBtn.addEventListener('click', ()=>openScanner('register'));
+  if(scanSearchBtn) scanSearchBtn.addEventListener('click', ()=>openScanner('search'));
+  if(scanCancel) scanCancel.addEventListener('click', closeScanner);
+
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(items)); }catch(e){ toast('保存容量がいっぱいかもしれません。写真は少なめに🙏'); } }
   function saveStats(){ localStorage.setItem(SKEY, JSON.stringify(stats)); }
   function saveRooms(){ localStorage.setItem(RKEY, JSON.stringify(rooms)); }
@@ -442,8 +493,9 @@
     if(!name){ toast('品名を入力してください'); nameEl.focus(); return; }
     const base=baseName(name);
     if(autonumEl.checked){ name = base + nextNumber(base); }
-    items.push({id:Date.now()+''+Math.floor(Math.random()*999), name, place, qty, photo:pendingPhoto, season:seasonSel, hi, lo, created:Date.now()});
+    items.push({id:Date.now()+''+Math.floor(Math.random()*999), name, place, qty, photo:pendingPhoto, season:seasonSel, hi, lo, barcode:pendingBarcode, created:Date.now()});
     save(); recordToday();
+    if(pendingBarcode){ barcodeDict[pendingBarcode]=base; saveDict(); pendingBarcode=''; if(scanRegBtn) scanRegBtn.textContent='🔖 バーコード'; }
     nameEl.value=''; qtyEl.value=''; hiEl.value=''; loEl.value='';
     if(!samePlaceEl.checked) placeEl.value='';
     seasonSel=''; [...seasonsEl.children].forEach(c=>c.classList.remove('on'));
@@ -515,7 +567,7 @@
     taphintEl.textContent = items.length ? '見つけたモノをタップ→⏱ 節約時間がたまります' : '';
     const q=searchEl.value.trim().toLowerCase();
     let shown=items.filter(it=>{
-      if(q && !((it.name+' '+it.place+' '+(it.season||'')).toLowerCase().includes(q))) return false;
+      if(q && !((it.name+' '+it.place+' '+(it.season||'')+' '+(it.barcode||'')).toLowerCase().includes(q))) return false;
       if(activeRoom && !((it.place||'').includes(activeRoom))) return false;
       return true;
     });
