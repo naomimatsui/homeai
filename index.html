@@ -154,6 +154,7 @@
         </div>
         <button class="mic" id="voiceSearchBtn" title="音声でさがす" aria-label="音声でさがす">🎙</button>
       </div>
+      <button class="add" id="voiceAddBtn" style="margin:0 0 14px">🎙 声で追加（「品名、場所」と言ってな）</button>
       <div class="fchips" id="fchips"></div>
       <div class="count" id="count"></div>
       <div class="stat" id="stat"></div>
@@ -178,7 +179,7 @@
         photoEl=$('photo'), previewEl=$('preview'), voiceBtn=$('voiceBtn'),
         roomsEl=$('rooms'), roomNameEl=$('roomName'), roomBtn=$('roomBtn'), savednoteEl=$('savednote'),
         listEl=$('list'), countEl=$('count'), statEl=$('stat'), taphintEl=$('taphint'), fchipsEl=$('fchips'),
-        searchEl=$('search'), voiceSearchBtn=$('voiceSearchBtn'), toastEl=$('toast'),
+        searchEl=$('search'), voiceSearchBtn=$('voiceSearchBtn'), voiceAddBtn=$('voiceAddBtn'), toastEl=$('toast'),
         tabRegist=$('tabRegist'), tabBrowse=$('tabBrowse'), viewRegist=$('viewRegist'), viewBrowse=$('viewBrowse');
 
   const cheers=['ええやん！','1個、探し物ゼロに近づいた✨','その調子や😊','登録completed！','コツコツ最強や👏'];
@@ -342,6 +343,25 @@
     };
     rec.onerror=()=>toast('うまく聞き取れんかった。もう一回');
     rec.onend=()=>voiceSearchBtn.classList.remove('on');
+    rec.start();
+  });
+  /* さがす画面から声で登録 */
+  voiceAddBtn.addEventListener('click', ()=>{
+    if(!SR){ toast('この端末は音声に未対応みたい🙏'); return; }
+    const rec=new SR(); rec.lang='ja-JP'; rec.interimResults=false; rec.maxAlternatives=1;
+    toast('話してな…🎙（例：ワンピース、リビングのクローゼット1）');
+    rec.onresult=e=>{
+      let t=e.results[0][0].transcript.trim().replace(/(を)?追加(して)?$/,'').replace(/。$/,'').trim();
+      const p=t.split(/[、,，]/);
+      let nm=(p[0]||'').trim(), pl=p.slice(1).join(' ').trim();
+      if(!nm){ toast('品名が聞き取れんかった。もう一回'); return; }
+      const base=baseName(nm);
+      if(autonumEl.checked) nm=base+nextNumber(base);
+      items.push({id:Date.now()+''+Math.floor(Math.random()*999), name:nm, place:pl, qty:1, photo:'', created:Date.now()});
+      save(); renderBrowse(); updateSavedNote();
+      toast(`「${nm}」を ${pl||'（場所未記入）'} に登録したで✨`);
+    };
+    rec.onerror=()=>toast('うまく聞き取れんかった。もう一回');
     rec.start();
   });
   listEl.addEventListener('click', e=>{
