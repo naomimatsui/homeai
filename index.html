@@ -17,12 +17,14 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   body{margin:0;
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
-    background:var(--bg);color:var(--ink);line-height:1.55;padding-bottom:44px;
-    -webkit-font-smoothing:antialiased;}
-  header{padding:26px 18px 12px;text-align:center;}
-  header .logomark{max-width:260px;width:74%;height:auto;display:inline-block;}
-  header .logo{font-size:26px;font-weight:600;letter-spacing:-.022em;}
-  header .tag{color:var(--sub);font-size:14px;margin-top:3px;letter-spacing:-.01em;}
+    background:var(--bg);color:var(--ink);line-height:1.55;padding-bottom:44px;-webkit-font-smoothing:antialiased;}
+  header{padding:20px 18px 8px;text-align:center;}
+  header .logomark{max-width:220px;width:62%;height:auto;display:inline-block;}
+  header .logo{font-size:24px;font-weight:600;letter-spacing:-.022em;}
+  header .tag{color:var(--sub);font-size:13px;margin-top:2px;}
+  .tabs{position:sticky;top:0;z-index:5;display:flex;gap:6px;background:var(--bg);padding:8px 16px 10px;max-width:520px;margin:0 auto;}
+  .tabs button{flex:1;padding:11px;border:1px solid var(--line);background:var(--card);border-radius:12px;font-size:14px;font-weight:600;color:var(--sub);cursor:pointer;}
+  .tabs button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
   .wrap{max-width:520px;margin:0 auto;padding:0 16px;}
   .card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:18px;margin-bottom:16px;}
   label{font-size:12px;color:var(--sub);display:block;margin-bottom:5px;letter-spacing:-.01em;}
@@ -54,96 +56,103 @@
   button.add{width:100%;padding:14px;font-size:16px;font-weight:600;letter-spacing:-.01em;color:#fff;
     background:var(--accent);border:none;border-radius:12px;cursor:pointer;transition:opacity .15s;margin-top:4px;}
   button.add:active{opacity:.85;}
-  .count{font-size:13px;color:var(--sub);text-align:center;margin:6px 0 4px;letter-spacing:-.01em;}
+  .savednote{font-size:12.5px;color:var(--sub);text-align:center;margin-top:11px;}
+  .savednote b{color:var(--accent);}
+  .count{font-size:13px;color:var(--sub);text-align:center;margin:2px 0 4px;}
   .count b{color:var(--accent);font-weight:600;}
-  .stat{text-align:center;font-size:13px;color:var(--accent);font-weight:600;margin:0 0 12px;letter-spacing:-.01em;}
-  .search{position:relative;margin-bottom:8px;}
+  .stat{text-align:center;font-size:13px;color:var(--accent);font-weight:600;margin:0 0 12px;}
+  .search{position:relative;margin-bottom:12px;}
   .search input{padding-left:38px;}
   .search .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;opacity:.5;}
-  .taphint{font-size:11.5px;color:var(--sub);text-align:center;margin:0 0 12px;opacity:.8;}
+  .fchips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
+  .fchip{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:18px;padding:7px 13px;font-size:13px;cursor:pointer;}
+  .fchip.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .taphint{font-size:11.5px;color:var(--sub);text-align:center;margin:-2px 0 12px;opacity:.8;}
+  .group{margin-bottom:18px;}
+  .grouphead{font-size:13px;font-weight:700;color:var(--accent);margin:0 3px 8px;letter-spacing:-.01em;}
+  .grouphead span{color:var(--sub);font-weight:500;margin-left:4px;}
   ul{list-style:none;margin:0;padding:0;}
   li{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px;
-    margin-bottom:9px;display:flex;align-items:center;gap:11px;box-shadow:var(--shadow);cursor:pointer;transition:background .1s;}
+    margin-bottom:8px;display:flex;align-items:center;gap:11px;box-shadow:var(--shadow);cursor:pointer;transition:background .1s;}
   li:active{background:var(--accent-soft);}
   li .thumb{width:46px;height:46px;object-fit:cover;border-radius:9px;border:1px solid var(--line);flex:none;}
-  li .name{font-weight:600;font-size:15px;letter-spacing:-.01em;}
+  li .name{font-weight:600;font-size:15px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   li .name .qtybadge{color:var(--sub);font-weight:500;font-size:13px;margin-left:6px;}
-  li .place{color:var(--sub);font-size:13px;margin-top:2px;}
-  li .place::before{content:"＠ ";}
   li .body{flex:1;min-width:0;}
-  li .body>div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   li .del{border:none;background:transparent;color:var(--sub);font-size:16px;cursor:pointer;padding:6px 8px;border-radius:8px;opacity:.6;flex:none;}
-  li .del:active{background:var(--accent-soft);}
   .empty{text-align:center;color:var(--sub);font-size:14px;padding:30px 12px;line-height:1.7;}
   .empty .big{font-size:32px;}
   .hi{color:var(--accent);}
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
-    background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:30px;font-size:14px;
-    font-weight:500;opacity:0;pointer-events:none;transition:.25s;white-space:nowrap;z-index:9;max-width:90%;}
+    background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:30px;font-size:14px;font-weight:500;
+    opacity:0;pointer-events:none;transition:.25s;white-space:nowrap;z-index:9;max-width:90%;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.warn{background:var(--warn);}
-  .hint{font-size:12px;color:var(--sub);margin-top:9px;text-align:center;letter-spacing:-.01em;}
+  .hint{font-size:12px;color:var(--sub);margin-top:9px;text-align:center;}
 </style>
 </head>
 <body>
   <header>
-    <!-- 送ってもらったロゴを app/logo.png として保存すると自動で表示されます -->
     <img class="logomark" src="logo.png" alt="HomeAI"
          onerror="this.remove();document.getElementById('logofb').style.display='block';">
-    <div id="logofb" style="display:none">
-      <div class="logo">HomeAI</div>
-      <div class="tag">探し物ゼロの家へ</div>
-    </div>
+    <div id="logofb" style="display:none"><div class="logo">HomeAI</div><div class="tag">探し物ゼロの家へ</div></div>
   </header>
 
-  <div class="wrap">
-    <div class="card">
-      <label>🏠 部屋（タップで「場所」に入るで。トイレが2つなら2回登録→トイレ・トイレ2）</label>
-      <div class="rooms" id="rooms"></div>
-      <div class="roomadd">
-        <input type="text" id="roomName" placeholder="部屋を追加（例：リビング）">
-        <button class="roombtn" id="roomBtn" aria-label="部屋を追加">＋</button>
-      </div>
-    </div>
+  <nav class="tabs">
+    <button id="tabRegist" class="active">➕ 登録</button>
+    <button id="tabBrowse">📋 一覧・さがす</button>
+  </nav>
 
-    <div class="card">
-      <div class="row">
-        <label>なにを？（品名）</label>
-        <div class="inline">
-          <input type="text" id="name" placeholder="例：ワンピース">
-          <button class="mic" id="voiceBtn" title="音声で入力" aria-label="音声で入力">🎙</button>
+  <div class="wrap">
+    <!-- ===== 登録ビュー ===== -->
+    <div id="viewRegist">
+      <div class="card">
+        <label>🏠 部屋（タップで「場所」に入る。トイレが2つなら2回登録→トイレ・トイレ2）</label>
+        <div class="rooms" id="rooms"></div>
+        <div class="roomadd">
+          <input type="text" id="roomName" placeholder="部屋を追加（例：リビング）">
+          <button class="roombtn" id="roomBtn" aria-label="部屋を追加">＋</button>
         </div>
       </div>
-      <div class="row">
-        <label>どこに？（部屋をタップ or 手入力）</label>
-        <input type="text" id="place" placeholder="例：リビング / クローゼット1">
+
+      <div class="card">
+        <div class="row">
+          <label>なにを？（品名）</label>
+          <div class="inline">
+            <input type="text" id="name" placeholder="例：ワンピース">
+            <button class="mic" id="voiceBtn" title="音声で入力" aria-label="音声で入力">🎙</button>
+          </div>
+        </div>
+        <div class="row">
+          <label>どこに？（部屋をタップ or 手入力）</label>
+          <input type="text" id="place" placeholder="例：リビング / クローゼット1">
+        </div>
+        <div class="tools">
+          <input class="qty" type="number" id="qty" min="1" placeholder="個数" inputmode="numeric">
+          <label class="photobtn">📷 写真（撮る/選ぶ）
+            <input type="file" id="photo" accept="image/*" hidden>
+          </label>
+          <div class="preview" id="preview"></div>
+        </div>
+        <label class="opt"><input type="checkbox" id="autonum" checked>番号を自動でつける（ワンピース1・2…）</label>
+        <label class="opt"><input type="checkbox" id="samePlace">同じ場所で続けて登録（クローゼット一気に）</label>
+        <button class="add" id="addBtn">＋ 登録する</button>
+        <div class="savednote" id="savednote"></div>
       </div>
-
-      <div class="tools">
-        <input class="qty" type="number" id="qty" min="1" placeholder="個数" inputmode="numeric">
-        <label class="photobtn">📷 写真をつける
-          <input type="file" id="photo" accept="image/*" capture="environment" hidden>
-        </label>
-        <div class="preview" id="preview"></div>
-      </div>
-
-      <label class="opt"><input type="checkbox" id="autonum" checked>番号を自動でつける（ワンピース1・2…）</label>
-      <label class="opt"><input type="checkbox" id="samePlace">同じ場所で続けて登録（クローゼット一気に）</label>
-
-      <button class="add" id="addBtn">＋ 登録する</button>
-      <div class="hint">🎙で話す・📷で撮る・個数を入れると「買いすぎ」も教えるで</div>
     </div>
 
-    <div class="count" id="count"></div>
-    <div class="stat" id="stat"></div>
-
-    <div class="search">
-      <span class="ico">🔍</span>
-      <input type="text" id="search" placeholder="探す（品名でも場所でも）例：ワンピース／リビング">
+    <!-- ===== 一覧・さがすビュー ===== -->
+    <div id="viewBrowse" hidden>
+      <div class="search">
+        <span class="ico">🔍</span>
+        <input type="text" id="search" placeholder="さがす（品名でも場所でも）例：ワンピース／リビング">
+      </div>
+      <div class="fchips" id="fchips"></div>
+      <div class="count" id="count"></div>
+      <div class="stat" id="stat"></div>
+      <div class="taphint" id="taphint"></div>
+      <div id="list"></div>
     </div>
-    <div class="taphint" id="taphint"></div>
-
-    <ul id="list"></ul>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -155,57 +164,56 @@
   let items = JSON.parse(localStorage.getItem(KEY) || '[]');
   let stats = JSON.parse(localStorage.getItem(SKEY) || '{"found":0,"minutes":0}');
   let rooms = JSON.parse(localStorage.getItem(RKEY) || 'null');
-  let pendingPhoto = '';
+  let pendingPhoto='', activeRoom=null;
 
   const $ = id => document.getElementById(id);
   const nameEl=$('name'), placeEl=$('place'), qtyEl=$('qty'), autonumEl=$('autonum'), samePlaceEl=$('samePlace'),
         photoEl=$('photo'), previewEl=$('preview'), voiceBtn=$('voiceBtn'),
-        roomsEl=$('rooms'), roomNameEl=$('roomName'), roomBtn=$('roomBtn'),
-        listEl=$('list'), countEl=$('count'), statEl=$('stat'), taphintEl=$('taphint'),
-        searchEl=$('search'), toastEl=$('toast');
+        roomsEl=$('rooms'), roomNameEl=$('roomName'), roomBtn=$('roomBtn'), savednoteEl=$('savednote'),
+        listEl=$('list'), countEl=$('count'), statEl=$('stat'), taphintEl=$('taphint'), fchipsEl=$('fchips'),
+        searchEl=$('search'), toastEl=$('toast'),
+        tabRegist=$('tabRegist'), tabBrowse=$('tabBrowse'), viewRegist=$('viewRegist'), viewBrowse=$('viewBrowse');
 
   const cheers=['ええやん！','1個、探し物ゼロに近づいた✨','その調子や😊','登録completed！','コツコツ最強や👏'];
-
   if(rooms===null){ rooms=['リビング','キッチン','寝室','トイレ','洗面所','玄関']; saveRooms(); }
 
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(items)); }catch(e){ toast('保存容量いっぱいかも。写真は少なめにな🙏'); } }
   function saveStats(){ localStorage.setItem(SKEY, JSON.stringify(stats)); }
   function saveRooms(){ localStorage.setItem(RKEY, JSON.stringify(rooms)); }
   function baseName(s){ return s.replace(/\s*\d+\s*$/,'').trim(); }
-  function nextNumber(base){
-    let max=0;
-    items.forEach(it=>{ if(baseName(it.name)===base){ const m=it.name.match(/(\d+)\s*$/); const n=m?parseInt(m[1],10):0; if(n>max)max=n; } });
-    return max+1;
-  }
+  function nextNumber(base){ let m=0; items.forEach(it=>{ if(baseName(it.name)===base){ const x=it.name.match(/(\d+)\s*$/); const n=x?parseInt(x[1],10):0; if(n>m)m=n; } }); return m+1; }
   function totalQty(base){ return items.filter(it=>baseName(it.name)===base).reduce((s,it)=>s+(it.qty||1),0); }
   function fmtMin(m){ if(m<60) return `約${m}分`; const h=Math.floor(m/60), mm=m%60; return `約${h}時間${mm?mm+'分':''}`; }
   function uniqueRoom(name){ if(!rooms.includes(name)) return name; let n=2; while(rooms.includes(name+n)) n++; return name+n; }
-  function toast(msg, warn){
-    toastEl.textContent=msg; toastEl.className='toast show'+(warn?' warn':'');
-    clearTimeout(toast._t); toast._t=setTimeout(()=>toastEl.classList.remove('show'),2000);
-  }
-  function esc(s){ return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function toast(msg,warn){ toastEl.textContent=msg; toastEl.className='toast show'+(warn?' warn':''); clearTimeout(toast._t); toast._t=setTimeout(()=>toastEl.classList.remove('show'),2000); }
+  function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-  /* 部屋 */
+  /* ---- タブ ---- */
+  function showView(v){
+    const b = v==='browse';
+    viewRegist.hidden=b; viewBrowse.hidden=!b;
+    tabRegist.classList.toggle('active',!b); tabBrowse.classList.toggle('active',b);
+    if(b) renderBrowse();
+  }
+  tabRegist.addEventListener('click',()=>showView('regist'));
+  tabBrowse.addEventListener('click',()=>showView('browse'));
+
+  /* ---- 部屋 ---- */
   function renderRooms(){
     roomsEl.innerHTML = rooms.length
       ? rooms.map((r,i)=>`<button class="chip" data-i="${i}">${esc(r)}<span class="x" data-del="${i}">×</span></button>`).join('')
       : '<span style="color:var(--sub);font-size:13px">部屋がまだないで。下で追加してな</span>';
   }
-  function addRoom(){
-    let n=roomNameEl.value.trim(); if(!n){ roomNameEl.focus(); return; }
-    rooms.push(uniqueRoom(n)); saveRooms(); roomNameEl.value=''; renderRooms(); toast('部屋を追加したで🏠');
-  }
+  function addRoom(){ let n=roomNameEl.value.trim(); if(!n){ roomNameEl.focus(); return; } rooms.push(uniqueRoom(n)); saveRooms(); roomNameEl.value=''; renderRooms(); toast('部屋を追加したで🏠'); }
   roomsEl.addEventListener('click', e=>{
     if(e.target.dataset.del!==undefined){ rooms.splice(+e.target.dataset.del,1); saveRooms(); renderRooms(); return; }
     const chip=e.target.closest('.chip'); if(!chip) return;
-    placeEl.value = rooms[+chip.dataset.i] + ' / '; placeEl.focus();
-    placeEl.setSelectionRange(placeEl.value.length, placeEl.value.length);
+    placeEl.value=rooms[+chip.dataset.i]+' / '; placeEl.focus(); placeEl.setSelectionRange(placeEl.value.length,placeEl.value.length);
   });
   roomBtn.addEventListener('click', addRoom);
   roomNameEl.addEventListener('keydown', e=>{ if(e.key==='Enter') addRoom(); });
 
-  /* 写真 */
+  /* ---- 写真（撮る/選ぶ両対応・captureなし） ---- */
   function handlePhoto(file){
     const reader=new FileReader();
     reader.onload=()=>{ const img=new Image();
@@ -220,79 +228,92 @@
   }
   photoEl.addEventListener('change', e=>{ if(e.target.files[0]) handlePhoto(e.target.files[0]); });
 
-  /* 音声 */
+  /* ---- 音声 ---- */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   voiceBtn.addEventListener('click', ()=>{
     if(!SR){ toast('この端末は音声入力に未対応みたい🙏 手入力でな'); return; }
     const rec=new SR(); rec.lang='ja-JP'; rec.interimResults=false; rec.maxAlternatives=1;
     voiceBtn.classList.add('on'); toast('話してな…🎙（例：ワンピース、リビングのクローゼット1）');
-    rec.onresult=e=>{ let t=e.results[0][0].transcript.trim();
-      t=t.replace(/(を)?追加(して)?$/,'').replace(/。$/,'').trim();
+    rec.onresult=e=>{ let t=e.results[0][0].transcript.trim().replace(/(を)?追加(して)?$/,'').replace(/。$/,'').trim();
       const p=t.split(/[、,，]/);
-      if(p.length>=2){ nameEl.value=p[0].trim(); placeEl.value=p.slice(1).join(' ').trim(); } else { nameEl.value=t; }
-      toast('聞き取ったで。確認して「登録する」押してな😊');
-    };
+      if(p.length>=2){ nameEl.value=p[0].trim(); placeEl.value=p.slice(1).join(' ').trim(); } else nameEl.value=t;
+      toast('聞き取ったで。確認して「登録する」押してな😊'); };
     rec.onerror=()=>toast('うまく聞き取れんかった。もう一回試してな');
     rec.onend=()=>voiceBtn.classList.remove('on');
     rec.start();
   });
 
-  function renderStat(){ statEl.innerHTML = stats.found>0 ? `⏱ ${stats.found}回 探さず発見・${fmtMin(stats.minutes)}を節約✨` : ''; }
-  function render(){
-    const q=searchEl.value.trim().toLowerCase();
-    const shown = items.filter(it => (it.name+' '+it.place).toLowerCase().includes(q));
-    countEl.innerHTML = items.length ? `<b>${items.length}</b>件 登録済み — 探し物ゼロまで、コツコツいこ😊` : '';
-    renderStat();
-    taphintEl.textContent = items.length ? '見つけたモノをタップ→⏱ 節約時間がたまるで' : '';
-    if(!items.length){
-      listEl.innerHTML = `<div class="empty"><div class="big">📦</div>まだ何もないで。<br>1個、登録してみよ。<br><span class="hi">部屋をタップ →「クローゼット1」って足すだけ</span>😊</div>`;
-      return;
-    }
-    if(!shown.length){ listEl.innerHTML = `<div class="empty">「${esc(q)}」は見つからんかった🤔<br>まだ登録してへんかも。</div>`; return; }
-    listEl.innerHTML = shown.slice().reverse().map(it=>`
-      <li data-id="${it.id}">
-        ${it.photo?`<img class="thumb" src="${it.photo}" alt="">`:''}
-        <div class="body">
-          <div class="name">${esc(it.name)}${(it.qty&&it.qty>1)?`<span class="qtybadge">×${it.qty}</span>`:''}</div>
-          <div class="place">${esc(it.place||'（場所未記入）')}</div>
-        </div>
-        <button class="del" data-id="${it.id}" aria-label="削除">🗑️</button>
-      </li>`).join('');
-  }
-
+  /* ---- 登録 ---- */
+  function updateSavedNote(){ savednoteEl.innerHTML = items.length ? `いま <b>${items.length}</b>件 登録済み → 「一覧・さがす」タブで見れるで` : 'まだ0件。1個登録してみよ😊'; }
   function add(){
-    let name=nameEl.value.trim();
-    const place=placeEl.value.trim();
+    let name=nameEl.value.trim(); const place=placeEl.value.trim();
     const qty=Math.max(1, parseInt(qtyEl.value,10)||1);
     if(!name){ toast('なにを登録する？品名を入れてな'); nameEl.focus(); return; }
     const base=baseName(name);
     if(autonumEl.checked){ name = base + nextNumber(base); }
-    const totalAfter = totalQty(base) + qty;
+    const totalAfter = totalQty(base)+qty;
     items.push({id:Date.now()+''+Math.floor(Math.random()*999), name, place, qty, photo:pendingPhoto, created:Date.now()});
     save();
     nameEl.value=''; qtyEl.value='';
     if(!samePlaceEl.checked) placeEl.value='';
-    pendingPhoto=''; previewEl.innerHTML=''; photoEl.value='';
-    nameEl.focus();
-    render();
-    if(totalAfter>=BUY_WARN){ toast(`⚠️ ${base}、合計${totalAfter}個！買いすぎ注意やで😂`, true); }
-    else { toast(cheers[Math.floor(Math.random()*cheers.length)]); }
+    pendingPhoto=''; previewEl.innerHTML=''; photoEl.value=''; nameEl.focus();
+    updateSavedNote();
+    if(totalAfter>=BUY_WARN) toast(`⚠️ ${base}、合計${totalAfter}個！買いすぎ注意やで😂`, true);
+    else toast(cheers[Math.floor(Math.random()*cheers.length)]);
   }
-
   $('addBtn').addEventListener('click', add);
   placeEl.addEventListener('keydown', e=>{ if(e.key==='Enter') add(); });
   nameEl.addEventListener('keydown', e=>{ if(e.key==='Enter') placeEl.focus(); });
-  searchEl.addEventListener('input', render);
+
+  /* ---- 一覧・さがす（部屋フィルタ＋場所別グループ） ---- */
+  function renderFchips(){
+    fchipsEl.innerHTML = `<button class="fchip ${activeRoom===null?'on':''}" data-room="__all">すべて</button>` +
+      rooms.map(r=>`<button class="fchip ${activeRoom===r?'on':''}" data-room="${esc(r)}">${esc(r)}</button>`).join('');
+  }
+  fchipsEl.addEventListener('click', e=>{
+    const b=e.target.closest('.fchip'); if(!b) return;
+    activeRoom = b.dataset.room==='__all' ? null : b.dataset.room;
+    renderBrowse();
+  });
+  function itemRow(it){
+    return `<li data-id="${it.id}">
+      ${it.photo?`<img class="thumb" src="${it.photo}" alt="">`:''}
+      <div class="body"><div class="name">${esc(it.name)}${(it.qty&&it.qty>1)?`<span class="qtybadge">×${it.qty}</span>`:''}</div></div>
+      <button class="del" data-id="${it.id}" aria-label="削除">🗑️</button>
+    </li>`;
+  }
+  function renderBrowse(){
+    renderFchips();
+    countEl.innerHTML = items.length ? `<b>${items.length}</b>件 登録済み` : '';
+    statEl.innerHTML = stats.found>0 ? `⏱ ${stats.found}回 探さず発見・${fmtMin(stats.minutes)}を節約✨` : '';
+    taphintEl.textContent = items.length ? '見つけたモノをタップ→⏱ 節約時間がたまるで' : '';
+    const q=searchEl.value.trim().toLowerCase();
+    let shown=items.filter(it=>{
+      if(q && !((it.name+' '+it.place).toLowerCase().includes(q))) return false;
+      if(activeRoom && !((it.place||'').includes(activeRoom))) return false;
+      return true;
+    });
+    if(!items.length){ listEl.innerHTML=`<div class="empty"><div class="big">📦</div>まだ何もないで。<br>「➕登録」タブから追加してな😊</div>`; return; }
+    if(!shown.length){ listEl.innerHTML=`<div class="empty">条件に合うモノが無かった🤔<br>検索や部屋フィルタを変えてみて</div>`; return; }
+    // 場所別グループ
+    const groups={}; shown.forEach(it=>{ const k=it.place||'（場所未記入）'; (groups[k]=groups[k]||[]).push(it); });
+    listEl.innerHTML = Object.keys(groups).sort().map(place=>`
+      <div class="group">
+        <div class="grouphead">📍 ${esc(place)}<span>(${groups[place].length})</span></div>
+        <ul>${groups[place].map(itemRow).join('')}</ul>
+      </div>`).join('');
+  }
+  searchEl.addEventListener('input', renderBrowse);
   listEl.addEventListener('click', e=>{
     const del=e.target.closest('.del');
-    if(del){ items=items.filter(it=>it.id!==del.dataset.id); save(); render(); return; }
+    if(del){ items=items.filter(it=>it.id!==del.dataset.id); save(); renderBrowse(); updateSavedNote(); return; }
     const li=e.target.closest('li'); if(!li||!li.dataset.id) return;
-    stats.found++; stats.minutes+=MIN_PER_FIND; saveStats(); renderStat();
+    stats.found++; stats.minutes+=MIN_PER_FIND; saveStats();
+    statEl.innerHTML=`⏱ ${stats.found}回 探さず発見・${fmtMin(stats.minutes)}を節約✨`;
     toast(`見つけた！⏱ 約${MIN_PER_FIND}分の節約（累計${stats.found}回）✨`);
   });
 
-  renderRooms();
-  render();
+  renderRooms(); updateSavedNote(); showView('regist');
 })();
 </script>
 </body>
