@@ -95,8 +95,10 @@
   .toast.warn{background:var(--warn);}
   .scanwrap{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:20;display:flex;align-items:center;justify-content:center;padding:18px;}
   .scanbox{background:var(--card);border-radius:18px;padding:16px;max-width:360px;width:100%;text-align:center;}
-  #reader{width:100%;border-radius:12px;overflow:hidden;background:#000;margin-bottom:12px;min-height:240px;}
-  #reader video{width:100%!important;height:auto!important;display:block;object-fit:cover;}
+  #reader{width:100%;}
+  #reader video{width:100%!important;height:auto!important;display:block;border-radius:10px;}
+  #reader img{display:none;}
+  #reader__dashboard_section_csr button{background:var(--accent)!important;color:#fff!important;border:none!important;border-radius:10px!important;padding:10px 16px!important;font-size:15px!important;}
   .scannote{font-size:13px;color:var(--sub);margin:10px 0 12px;}
   .scanbox .cancel{border:none;background:var(--accent);color:#fff;border-radius:11px;padding:11px 22px;font-size:15px;font-weight:600;cursor:pointer;}
   .hint{font-size:12px;color:var(--sub);margin-top:9px;text-align:center;}
@@ -284,7 +286,7 @@
   let rooms = JSON.parse(localStorage.getItem(RKEY) || 'null');
   let pendingPhoto='', activeRoom=null, seasonSel='', pendingBarcode='';
   let barcodeDict=JSON.parse(localStorage.getItem('homeai_barcode_dict_v1')||'{}');
-  let html5QrCode=null, scanMode='register';
+  let html5QrScanner=null, scanMode='register';
 
   const $ = id => document.getElementById(id);
   const nameEl=$('name'), placeEl=$('place'), qtyEl=$('qty'), hiEl=$('hi'), loEl=$('lo'), seasonsEl=$('seasons'), autonumEl=$('autonum'), samePlaceEl=$('samePlace'),
@@ -384,15 +386,13 @@
         scanSearchBtn=document.getElementById('scanSearchBtn'), scanCancel=document.getElementById('scanCancel');
   function saveDict(){ localStorage.setItem('homeai_barcode_dict_v1', JSON.stringify(barcodeDict)); }
   function openScanner(mode){
-    if(typeof Html5Qrcode==='undefined'){ toast('カメラライブラリの読み込みに失敗。通信環境を確認してください🙏'); return; }
+    if(typeof Html5QrcodeScanner==='undefined'){ toast('カメラライブラリの読み込みに失敗。通信環境を確認してください🙏'); return; }
     scanMode=mode; scanwrap.hidden=false;
-    const note=scanwrap.querySelector('.scannote'); if(note) note.textContent='カメラを起動中…📷';
-    html5QrCode=new Html5Qrcode('reader');
-    html5QrCode.start({facingMode:'environment'},{fps:10,qrbox:220}, onScan, ()=>{})
-      .then(()=>{ if(note) note.textContent='JANコード（バーコード）にカメラを向けてください'; })
-      .catch(err=>{ if(note) note.textContent='⚠️ '+((err&&err.name)?err.name+'：':'')+((err&&err.message)||err); });
+    let done=false;
+    html5QrScanner=new Html5QrcodeScanner('reader',{fps:10,qrbox:220,rememberLastUsedCamera:true},false);
+    html5QrScanner.render(function(code){ if(done) return; done=true; onScan(code); }, function(){});
   }
-  function closeScanner(){ if(html5QrCode){ html5QrCode.stop().catch(()=>{}).then(()=>{ if(html5QrCode) html5QrCode.clear(); html5QrCode=null; }); } scanwrap.hidden=true; }
+  function closeScanner(){ if(html5QrScanner){ try{ html5QrScanner.clear(); }catch(e){} html5QrScanner=null; } scanwrap.hidden=true; }
   function onScan(code){
     closeScanner();
     if(scanMode==='register'){
