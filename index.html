@@ -68,9 +68,13 @@
   .fchip{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:18px;padding:7px 13px;font-size:13px;cursor:pointer;}
   .fchip.on{background:var(--accent);color:#fff;border-color:var(--accent);}
   .taphint{font-size:11.5px;color:var(--sub);text-align:center;margin:-2px 0 12px;opacity:.8;}
-  .group{margin-bottom:18px;}
-  .grouphead{font-size:13px;font-weight:700;color:var(--accent);margin:0 3px 8px;letter-spacing:-.01em;}
-  .grouphead span{color:var(--sub);font-weight:500;margin-left:4px;}
+  .searchrow{display:flex;gap:8px;margin-bottom:12px;}
+  .searchrow .search{flex:1;margin-bottom:0;}
+  .group{margin-bottom:22px;}
+  .roomhead{font-size:16px;font-weight:700;color:var(--ink);margin:0 2px 9px;letter-spacing:-.02em;padding-bottom:6px;border-bottom:1px solid var(--line);}
+  .roomhead span{color:var(--sub);font-weight:500;font-size:13px;margin-left:6px;}
+  .subhead{font-size:12.5px;font-weight:600;color:var(--accent);margin:8px 2px 6px 4px;}
+  .group ul{margin:0 0 4px 6px;}
   ul{list-style:none;margin:0;padding:0;}
   li{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px;
     margin-bottom:8px;display:flex;align-items:center;gap:11px;box-shadow:var(--shadow);cursor:pointer;transition:background .1s;}
@@ -143,9 +147,12 @@
 
     <!-- ===== 一覧・さがすビュー ===== -->
     <div id="viewBrowse" hidden>
-      <div class="search">
-        <span class="ico">🔍</span>
-        <input type="text" id="search" placeholder="さがす（品名でも場所でも）例：ワンピース／リビング">
+      <div class="searchrow">
+        <div class="search">
+          <span class="ico">🔍</span>
+          <input type="text" id="search" placeholder="さがす（品名・場所）">
+        </div>
+        <button class="mic" id="voiceSearchBtn" title="音声でさがす" aria-label="音声でさがす">🎙</button>
       </div>
       <div class="fchips" id="fchips"></div>
       <div class="count" id="count"></div>
@@ -171,7 +178,7 @@
         photoEl=$('photo'), previewEl=$('preview'), voiceBtn=$('voiceBtn'),
         roomsEl=$('rooms'), roomNameEl=$('roomName'), roomBtn=$('roomBtn'), savednoteEl=$('savednote'),
         listEl=$('list'), countEl=$('count'), statEl=$('stat'), taphintEl=$('taphint'), fchipsEl=$('fchips'),
-        searchEl=$('search'), toastEl=$('toast'),
+        searchEl=$('search'), voiceSearchBtn=$('voiceSearchBtn'), toastEl=$('toast'),
         tabRegist=$('tabRegist'), tabBrowse=$('tabBrowse'), viewRegist=$('viewRegist'), viewBrowse=$('viewBrowse');
 
   const cheers=['ええやん！','1個、探し物ゼロに近づいた✨','その調子や😊','登録completed！','コツコツ最強や👏'];
@@ -295,15 +302,48 @@
     });
     if(!items.length){ listEl.innerHTML=`<div class="empty"><div class="big">📦</div>まだ何もないで。<br>「➕登録」タブから追加してな😊</div>`; return; }
     if(!shown.length){ listEl.innerHTML=`<div class="empty">条件に合うモノが無かった🤔<br>検索や部屋フィルタを変えてみて</div>`; return; }
-    // 場所別グループ
-    const groups={}; shown.forEach(it=>{ const k=it.place||'（場所未記入）'; (groups[k]=groups[k]||[]).push(it); });
-    listEl.innerHTML = Object.keys(groups).sort().map(place=>`
-      <div class="group">
-        <div class="grouphead">📍 ${esc(place)}<span>(${groups[place].length})</span></div>
-        <ul>${groups[place].map(itemRow).join('')}</ul>
-      </div>`).join('');
+    // 2階層グループ：部屋（大枠）→ その中の場所（テレビ台/引出 など）
+    const rmap={};
+    shown.forEach(it=>{
+      const parts=(it.place||'').split('/').map(s=>s.trim()).filter(Boolean);
+      const room = parts.length?parts[0]:'（場所未記入）';
+      const sub = parts.slice(1).join(' / ');
+      rmap[room]=rmap[room]||{};
+      (rmap[room][sub]=rmap[room][sub]||[]).push(it);
+    });
+    listEl.innerHTML = Object.keys(rmap).sort().map(room=>{
+      const subs=rmap[room];
+      const total=Object.values(subs).reduce((s,a)=>s+a.length,0);
+      const inner=Object.keys(subs).sort().map(sub=>{
+        const rows=`<ul>${subs[sub].map(itemRow).join('')}</ul>`;
+        return sub ? `<div class="subhead">📍 ${esc(sub)}</div>${rows}` : rows;
+      }).join('');
+      return `<div class="group"><div class="roomhead">🏠 ${esc(room)}<span>(${total})</span></div>${inner}</div>`;
+    }).join('');
   }
   searchEl.addEventListener('input', renderBrowse);
+  /* 音声で呼び出し（聞く→場所を声で答える） */
+  voiceSearchBtn.addEventListener('click', ()=>{
+    if(!SR){ toast('この端末は音声に未対応みたい🙏'); return; }
+    const rec=new SR(); rec.lang='ja-JP'; rec.interimResults=false; rec.maxAlternatives=1;
+    voiceSearchBtn.classList.add('on'); toast('聞くで…🎙（例：パスポート どこ？）');
+    rec.onresult=e=>{
+      let t=e.results[0][0].transcript.trim()
+        .replace(/はどこ.*$/,'').replace(/どこ.*$/,'').replace(/を?探して.*$/,'').replace(/教えて.*$/,'')
+        .replace(/[。？?、]/g,'').trim();
+      searchEl.value=t; activeRoom=null; renderBrowse();
+      const q=t.toLowerCase();
+      const hit=items.find(it=>(it.name+' '+it.place).toLowerCase().includes(q));
+      if(hit){
+        const msg = hit.place ? `${hit.name}は、${hit.place}にあるで` : `${hit.name}は登録されてるけど、場所が未記入や`;
+        toast(`${hit.name} → ${hit.place||'場所未記入'}`);
+        if('speechSynthesis' in window){ const u=new SpeechSynthesisUtterance(msg); u.lang='ja-JP'; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+      } else { toast(`「${t}」は見つからんかった🤔`); }
+    };
+    rec.onerror=()=>toast('うまく聞き取れんかった。もう一回');
+    rec.onend=()=>voiceSearchBtn.classList.remove('on');
+    rec.start();
+  });
   listEl.addEventListener('click', e=>{
     const del=e.target.closest('.del');
     if(del){ items=items.filter(it=>it.id!==del.dataset.id); save(); renderBrowse(); updateSavedNote(); return; }
