@@ -135,6 +135,10 @@
   .badge.season{color:var(--accent);}
   .badge.over{color:var(--warn);}
   .badge.low{color:#c8952a;}
+  .badge.important{color:#c8952a;}
+  .important-intro{text-align:center;}
+  .important-intro .ii-title{font-weight:700;font-size:15px;letter-spacing:-.01em;}
+  .important-intro .ii-copy{font-size:13px;color:var(--sub);line-height:1.6;margin:6px 0 13px;}
   .qstep{display:flex;align-items:center;gap:7px;flex:none;}
   .qstep button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:16px;cursor:pointer;line-height:1;padding:0;}
   .qstep .qv{min-width:18px;text-align:center;font-size:14px;font-weight:600;}
@@ -158,6 +162,12 @@
 
     <!-- ===== 登録ビュー ===== -->
     <div id="viewRegist">
+      <div class="card important-intro">
+        <div class="ii-title">⭐ 大切なものだけでもOK</div>
+        <p class="ii-copy">全部じゃなくていい。大切なものだけ、HomeAIに覚えさせよう。<br>通帳・印鑑・パスポート・保険証券・防災用品・予備の鍵…<b>失くしたら困るもの</b>だけでも十分役立ちます。</p>
+        <button class="add" id="startImportant" style="margin:0">⭐ 大切なものを登録する</button>
+      </div>
+
       <div class="card">
         <label>🏠 部屋（タップで「場所」に入る。トイレが2つなら2回登録→トイレ・トイレ2）</label>
         <div class="rooms" id="rooms"></div>
@@ -211,6 +221,7 @@
           <label>メモ（任意）</label>
           <input type="text" id="memo" placeholder="例：夏用／来客用／要補充 など">
         </div>
+        <label class="opt"><input type="checkbox" id="important">⭐ 大切なもの（失くしたら困る／防災・相続・保険など）</label>
         <label class="opt"><input type="checkbox" id="autonum" checked>番号を自動でつける（ワンピース1・2…）</label>
         <label class="opt"><input type="checkbox" id="samePlace">同じ場所で続けて登録（クローゼット一気に）</label>
         <button class="add" id="addBtn">＋ 登録する</button>
@@ -241,7 +252,8 @@
         <button class="mic" id="voiceSearchBtn" title="音声でさがす" aria-label="音声でさがす">🎙</button>
       </div>
       <button class="add" id="voiceAddBtn" style="margin:0 0 10px">🎙 声で追加（「品名、場所」と話す）</button>
-      <button class="add" id="scanSearchBtn" style="margin:0 0 14px">🔖 バーコードで探す（店で「家にある？」）</button>
+      <button class="add" id="scanSearchBtn" style="margin:0 0 12px">🔖 バーコードで探す（店で「家にある？」）</button>
+      <label class="opt" id="onlyImportantWrap" style="justify-content:center;margin:0 0 12px"><input type="checkbox" id="onlyImportant">⭐ 大切なものだけ表示</label>
       <div class="fchips" id="fchips"></div>
       <div class="count" id="count"></div>
       <div class="stat" id="stat"></div>
@@ -297,7 +309,7 @@
   let html5QrCode=null, scanMode='register';
 
   const $ = id => document.getElementById(id);
-  const nameEl=$('name'), placeEl=$('place'), qtyEl=$('qty'), hiEl=$('hi'), loEl=$('lo'), barcodeInput=$('barcodeInput'), memoEl=$('memo'), seasonsEl=$('seasons'), autonumEl=$('autonum'), samePlaceEl=$('samePlace'),
+  const nameEl=$('name'), placeEl=$('place'), qtyEl=$('qty'), hiEl=$('hi'), loEl=$('lo'), barcodeInput=$('barcodeInput'), memoEl=$('memo'), importantEl=$('important'), onlyImportantEl=$('onlyImportant'), seasonsEl=$('seasons'), autonumEl=$('autonum'), samePlaceEl=$('samePlace'),
         photoEl=$('photo'), previewEl=$('preview'), voiceBtn=$('voiceBtn'),
         roomsEl=$('rooms'), roomNameEl=$('roomName'), roomBtn=$('roomBtn'), savednoteEl=$('savednote'),
         listEl=$('list'), countEl=$('count'), statEl=$('stat'), taphintEl=$('taphint'), fchipsEl=$('fchips'),
@@ -515,10 +527,10 @@
     if(autonumEl.checked){ name = base + nextNumber(base); }
     const bc=barcodeInput?barcodeInput.value.trim():'';
     const now=Date.now();
-    items.push({id:now+''+Math.floor(Math.random()*999), name, place, qty, photo:pendingPhoto, season:seasonSel, hi, lo, barcode:bc, memo:memoEl?memoEl.value.trim():'', created:now, updatedAt:now});
+    items.push({id:now+''+Math.floor(Math.random()*999), name, place, qty, photo:pendingPhoto, season:seasonSel, hi, lo, barcode:bc, memo:memoEl?memoEl.value.trim():'', important:importantEl?importantEl.checked:false, created:now, updatedAt:now});
     save(); recordToday();
     if(bc){ barcodeDict[bc]={name:base, place:place}; saveDict(); }
-    nameEl.value=''; qtyEl.value=''; hiEl.value=''; loEl.value=''; if(barcodeInput) barcodeInput.value=''; if(memoEl) memoEl.value='';
+    nameEl.value=''; qtyEl.value=''; hiEl.value=''; loEl.value=''; if(barcodeInput) barcodeInput.value=''; if(memoEl) memoEl.value=''; if(importantEl) importantEl.checked=false;
     if(!samePlaceEl.checked) placeEl.value='';
     seasonSel=''; [...seasonsEl.children].forEach(c=>c.classList.remove('on'));
     pendingPhoto=''; previewEl.innerHTML=''; photoEl.value=''; nameEl.focus();
@@ -567,6 +579,7 @@
   function itemRow(it){
     const q=it.qty||1;
     const badges=[];
+    if(it.important) badges.push(`<span class="badge important">⭐ 大切</span>`);
     if(it.season) badges.push(`<span class="badge season">${esc(it.season)}</span>`);
     if(it.hi!=null && q>=it.hi) badges.push(`<span class="badge over">⚠️買いすぎ</span>`);
     if(it.lo!=null && q<=it.lo) badges.push(`<span class="badge low">🛒買い足し</span>`);
@@ -592,6 +605,7 @@
     let shown=items.filter(it=>{
       if(q && !((it.name+' '+it.place+' '+(it.season||'')+' '+(it.barcode||'')+' '+(it.memo||'')).toLowerCase().includes(q))) return false;
       if(activeRoom && !((it.place||'').includes(activeRoom))) return false;
+      if(onlyImportantEl && onlyImportantEl.checked && !it.important) return false;
       return true;
     });
     if(!items.length){ listEl.innerHTML=`<div class="empty"><div class="big">📦</div>まだ何もありません。<br>「➕登録」タブから追加してください😊</div>`; return; }
@@ -616,6 +630,8 @@
     }).join('');
   }
   searchEl.addEventListener('input', renderBrowse);
+  if(onlyImportantEl) onlyImportantEl.addEventListener('change', renderBrowse);
+  (function(){ const b=document.getElementById('startImportant'); if(b) b.addEventListener('click', ()=>{ if(importantEl) importantEl.checked=true; showView('regist'); nameEl.focus(); toast('⭐ 大切なものモード：品名を入れて登録してください'); }); })();
   /* 音声で呼び出し（聞く→場所を声で答える） */
   voiceSearchBtn.addEventListener('click', ()=>{
     if(!SR){ toast('この端末は音声に未対応みたい🙏'); return; }
