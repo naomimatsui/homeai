@@ -111,9 +111,12 @@
   .chmsg{font-size:12.5px;color:var(--accent);margin-top:6px;font-weight:600;}
   .plantitle{font-weight:700;font-size:16px;letter-spacing:-.01em;margin-bottom:6px;}
   .planprog{font-size:14px;color:var(--accent);font-weight:700;margin:8px 0 12px;}
-  .phaseguide{background:var(--accent-soft);border-radius:12px;padding:11px 13px;margin:4px 0 14px;}
-  .phaseguide .ph{font-size:12.5px;color:var(--ink);line-height:1.75;}
-  .phaseguide .ph b{color:var(--accent);margin-right:6px;}
+  .phasehead{font-size:13px;font-weight:700;color:var(--accent);margin:18px 2px 8px;padding-bottom:6px;border-bottom:1px solid var(--line);line-height:1.4;}
+  .phasehead:first-child{margin-top:4px;}
+  .phasehead span{color:var(--sub);font-weight:500;font-size:12px;margin-left:5px;}
+  .planstart{display:flex;align-items:center;gap:8px;margin:2px 0 10px;}
+  .planstart input[type=date]{padding:9px 11px;font-size:15px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);}
+  .pday{flex:none;font-size:11px;font-weight:700;color:var(--accent);min-width:36px;text-align:center;}
   .planrow{display:flex;align-items:center;gap:7px;padding:8px 0;border-bottom:1px solid var(--line);}
   .planrow input[type=checkbox]{width:21px;height:21px;accent-color:var(--accent);flex:none;}
   .planrow .ptext{flex:1;min-width:0;border:none;background:transparent;font-size:14px;color:var(--ink);padding:5px 4px;outline:none;border-radius:6px;}
@@ -268,12 +271,12 @@
     <div id="viewPlan" hidden>
       <div class="card">
         <div class="plantitle">🎯 30日で「探し物ゼロ」プラン</div>
-        <p class="imphint">1日ずつでも、順番はバラバラでもOK。サボった分は翌日でも大丈夫。<br><b>30日で全部チェック</b>できたら達成🎉（↑↓で順番変更・自由に編集/追加）</p>
-        <div class="phaseguide">
-          <div class="ph"><b>Day 1–10</b>まず登録（家じゅうをHomeAIに入れる）</div>
-          <div class="ph"><b>Day 11–20</b>定位置を決めて片づける</div>
-          <div class="ph"><b>Day 21–30</b>仕上げ＆ビフォーアフター</div>
+        <p class="imphint">3つのフェーズに分けてあります。1日1エリアずつでOK・順番はバラバラでもOK・サボった分は翌日でも大丈夫。<br><b>30日で全部チェック</b>できたら達成🎉（↑↓で順番変更・自由に編集/追加）</p>
+        <div class="planstart">
+          <label style="display:inline;margin:0;font-size:13px;color:var(--sub)">📅 開始日</label>
+          <input type="date" id="planStart">
         </div>
+        <p class="imphint" style="margin:-4px 0 10px">開始日を入れると、各項目に日付が入ります（Day1＝開始日）。追加した項目は内容から自動でフェーズに振り分けます。</p>
         <div class="planprog" id="planprog"></div>
         <div id="planlist"></div>
         <div class="roomadd">
@@ -362,32 +365,58 @@
   const planlistEl=document.getElementById('planlist'), planprogEl=document.getElementById('planprog'),
         planNewEl=document.getElementById('planNew'), planAddBtn=document.getElementById('planAddBtn'),
         viewPlan=document.getElementById('viewPlan'), tabPlan=document.getElementById('tabPlan'),
-        planImportEl=document.getElementById('planImport'), planReplaceEl=document.getElementById('planReplace'), planImportBtn=document.getElementById('planImportBtn');
+        planImportEl=document.getElementById('planImport'), planReplaceEl=document.getElementById('planReplace'), planImportBtn=document.getElementById('planImportBtn'), planStartEl=document.getElementById('planStart');
   let plan=JSON.parse(localStorage.getItem(PKEY)||'null');
   if(plan===null){
-    plan=['リビング（見えている物）','リビングの収納・引き出し','テレビ台まわり','キッチン（食器）','キッチン（鍋・調理器具）','キッチン（食品ストック）','冷蔵庫・調味料','洗面所の収納','洗面台の下','トイレの収納','お風呂まわり','寝室クローゼット','ウォークインクローゼット（服）','ウォークインクローゼット（バッグ・小物）','仕事部屋のクローゼット','喪服・礼服','季節物の服の入れ替え','靴・シューズ','下着・靴下・ストッキング','寝具・タオル類','薬・救急セット','重要書類・貴重品（パスポート等）','印鑑・通帳・保険証券','アクセサリー','文房具・事務用品','掃除・消耗品ストック（ティッシュ・洗剤）','電池・工具・コード類','本・CD・DVD・趣味','思い出・写真・推しグッズ','玄関・傘・アウトドア']
-      .map(t=>({text:t,done:false}));
+    plan=[
+      ['リビング（見えている物）',1],['リビングの収納・引き出し',1],['テレビ台まわり',1],['キッチン（食器）',1],['キッチン（鍋・調理器具）',1],['キッチン（食品ストック）',1],['冷蔵庫・調味料',1],['洗面所の収納',1],['トイレの収納',1],['玄関・傘',1],
+      ['寝室クローゼット',2],['ウォークインクローゼット（服）',2],['ウォークインクローゼット（バッグ・小物）',2],['仕事部屋のクローゼット',2],['喪服・礼服',2],['季節物の服の入れ替え',2],['靴・シューズ',2],['下着・靴下・ストッキング',2],['寝具・タオル類',2],['お風呂まわり',2],
+      ['薬・救急セット',3],['重要書類・パスポート',3],['印鑑・通帳・保険証券',3],['アクセサリー・貴重品',3],['文房具・事務用品',3],['掃除・消耗品ストック',3],['電池・工具・コード類',3],['本・CD・DVD・趣味',3],['思い出・写真・推しグッズ',3],['仕上げ・ビフォーアフター撮影',3]
+    ].map(x=>({text:x[0],done:false,phase:x[1]}));
     localStorage.setItem(PKEY,JSON.stringify(plan));
+  }
+  if(plan.some(function(p){return !p.phase;})){ var _n=plan.length; plan.forEach(function(p,i){ if(!p.phase) p.phase = i<Math.ceil(_n/3)?1:(i<Math.ceil(_n*2/3)?2:3); }); localStorage.setItem(PKEY,JSON.stringify(plan)); }
+  let planStart = localStorage.getItem('homeai_plan_start_v1') || (challenge&&challenge.start) || '';
+  function classifyPhase(text){
+    const t=text||'';
+    if(/書類|パスポート|印鑑|通帳|保険|年金|契約|保証|証券|マイナンバー|薬|救急|防災|予備の?鍵|鍵|思い出|写真|アルバム|貴重|アクセサリー|宝石|高価|仕上げ|ビフォーアフター|大切/.test(t)) return 3;
+    if(/クローゼット|タンス|洋服|服|衣|着物|靴|シューズ|ブーツ|サンダル|パンプス|下着|靴下|ストッキング|寝具|布団|毛布|シーツ|タオル|喪服|礼服|スーツ|コート|バッグ|カバン|季節/.test(t)) return 2;
+    return 1;
   }
   function savePlan(){ localStorage.setItem(PKEY, JSON.stringify(plan)); }
   function planDoneCount(){ return plan.filter(p=>p.done).length; }
-  function renderPlan(){
-    planprogEl.innerHTML=`✅ <b>${planDoneCount()}</b> / ${plan.length} 完了`;
-    planlistEl.innerHTML=plan.map((p,i)=>`
-      <div class="planrow ${p.done?'done':''}" data-i="${i}">
+  const PHASES=[[1,'まず登録（毎日使う場所から）'],[2,'片づけ・定位置（クローゼット・衣類）'],[3,'仕上げ・大切なもの']];
+  function dateForDay(dayNum){ if(!planStart) return ''; const d=new Date(planStart+'T00:00:00'); if(isNaN(d)) return ''; d.setDate(d.getDate()+(dayNum-1)); return (d.getMonth()+1)+'/'+d.getDate(); }
+  function planRowHTML(p,i,dayNum){
+    const dl = planStart ? dateForDay(dayNum) : String(dayNum);
+    return `<div class="planrow ${p.done?'done':''}" data-i="${i}">
         <input type="checkbox" ${p.done?'checked':''} data-act="chk">
+        <span class="pday">${dl}</span>
         <input class="ptext" value="${esc(p.text)}" data-act="txt">
         <button class="pbtn" data-act="up" aria-label="上へ">↑</button>
         <button class="pbtn" data-act="down" aria-label="下へ">↓</button>
         <button class="pbtn" data-act="del" aria-label="削除">🗑️</button>
-      </div>`).join('');
+      </div>`;
+  }
+  function renderPlan(){
+    planprogEl.innerHTML=`✅ <b>${planDoneCount()}</b> / ${plan.length} 完了`;
+    let html='', day=0;
+    PHASES.forEach(ph=>{
+      const its=[]; plan.forEach((p,i)=>{ if((p.phase||1)===ph[0]) its.push([p,i]); });
+      if(!its.length) return;
+      const s=day+1, e=day+its.length, done=its.filter(x=>x[0].done).length;
+      const range = planStart ? `${dateForDay(s)}〜${dateForDay(e)}` : `Day ${s}–${e}`;
+      html+=`<div class="phasehead">${range}　${ph[1]}<span>（${done}/${its.length}）</span></div>`;
+      html+=its.map(x=>{ day++; return planRowHTML(x[0],x[1],day); }).join('');
+    });
+    planlistEl.innerHTML=html;
   }
   planlistEl.addEventListener('click', e=>{
     const b=e.target.closest('.pbtn'); if(!b) return;
     const i=+e.target.closest('.planrow').dataset.i, act=b.dataset.act;
     if(act==='del') plan.splice(i,1);
-    else if(act==='up' && i>0){ const t=plan[i-1]; plan[i-1]=plan[i]; plan[i]=t; }
-    else if(act==='down' && i<plan.length-1){ const t=plan[i+1]; plan[i+1]=plan[i]; plan[i]=t; }
+    else if(act==='up'){ for(let j=i-1;j>=0;j--){ if((plan[j].phase||1)===(plan[i].phase||1)){ const t=plan[j];plan[j]=plan[i];plan[i]=t; break; } } }
+    else if(act==='down'){ for(let j=i+1;j<plan.length;j++){ if((plan[j].phase||1)===(plan[i].phase||1)){ const t=plan[j];plan[j]=plan[i];plan[i]=t; break; } } }
     savePlan(); renderPlan(); renderChallenge();
   });
   planlistEl.addEventListener('change', e=>{
@@ -396,18 +425,19 @@
       if(planDoneCount()===plan.length && plan.length) toast('🎉 プラン全部完了！探し物ゼロの家、達成です！'); }
     else if(e.target.dataset.act==='txt'){ plan[i].text=e.target.value; savePlan(); }
   });
-  function addPlan(){ const t=planNewEl.value.trim(); if(!t) return; plan.push({text:t,done:false}); savePlan(); planNewEl.value=''; renderPlan(); renderChallenge(); }
+  function addPlan(){ const t=planNewEl.value.trim(); if(!t) return; const ph=classifyPhase(t); plan.push({text:t,done:false,phase:ph}); savePlan(); planNewEl.value=''; renderPlan(); renderChallenge(); toast(`追加：フェーズ${ph}に振り分けました`); }
   planAddBtn.addEventListener('click', addPlan);
   planNewEl.addEventListener('keydown', e=>{ if(e.key==='Enter') addPlan(); });
   planImportBtn.addEventListener('click', ()=>{
     const lines=planImportEl.value.split(/\r?\n/).map(s=>s.replace(/^\s*[-・*●▪️\d０-９.．、)）]+\s*/,'').trim()).filter(Boolean);
     if(!lines.length){ toast('入力が空です'); return; }
-    const arr=lines.map(t=>({text:t,done:false}));
+    const arr=lines.map(t=>({text:t,done:false,phase:classifyPhase(t)}));
     plan = planReplaceEl.checked ? arr : plan.concat(arr);
     savePlan(); planImportEl.value=''; renderPlan(); renderChallenge();
     toast(`プランを${planReplaceEl.checked?'作成':'追加'}しました（${lines.length}項目）✨`);
   });
   tabPlan.addEventListener('click',()=>showView('plan'));
+  if(planStartEl){ planStartEl.value=planStart||''; planStartEl.addEventListener('change', ()=>{ planStart=planStartEl.value; localStorage.setItem('homeai_plan_start_v1', planStart); renderPlan(); }); }
 
   /* バーコード（html5-qrcode） */
   const scanwrap=document.getElementById('scanwrap'), scanRegBtn=document.getElementById('scanRegBtn'),
