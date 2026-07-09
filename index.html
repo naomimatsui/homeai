@@ -179,12 +179,18 @@
           <label>どこに？（部屋をタップ or 手入力）</label>
           <input type="text" id="place" placeholder="例：リビング / クローゼット1">
         </div>
+        <div class="row">
+          <label>バーコード（任意・スキャン or 手入力）</label>
+          <div class="inline">
+            <input type="text" id="barcodeInput" placeholder="例：4901234567890" inputmode="numeric">
+            <button type="button" class="mic" id="scanRegBtn" title="バーコードをスキャン" aria-label="バーコードをスキャン">🔖</button>
+          </div>
+        </div>
         <div class="tools">
           <input class="qty" type="number" id="qty" min="1" placeholder="個数" inputmode="numeric">
           <label class="photobtn">📷 写真（撮る/選ぶ）
             <input type="file" id="photo" accept="image/*" hidden>
           </label>
-          <button type="button" class="photobtn" id="scanRegBtn">🔖 バーコード</button>
           <div class="preview" id="preview"></div>
         </div>
         <div class="row">
@@ -200,6 +206,10 @@
         <div class="row alertrow">
           <div><label>買いすぎ⚠️（この数以上）</label><input type="number" id="hi" min="1" placeholder="例：トイレ10"></div>
           <div><label>買い足し🛒（この数以下）</label><input type="number" id="lo" min="0" placeholder="例：2"></div>
+        </div>
+        <div class="row">
+          <label>メモ（任意）</label>
+          <input type="text" id="memo" placeholder="例：夏用／来客用／要補充 など">
         </div>
         <label class="opt"><input type="checkbox" id="autonum" checked>番号を自動でつける（ワンピース1・2…）</label>
         <label class="opt"><input type="checkbox" id="samePlace">同じ場所で続けて登録（クローゼット一気に）</label>
@@ -287,7 +297,7 @@
   let html5QrCode=null, scanMode='register';
 
   const $ = id => document.getElementById(id);
-  const nameEl=$('name'), placeEl=$('place'), qtyEl=$('qty'), hiEl=$('hi'), loEl=$('lo'), seasonsEl=$('seasons'), autonumEl=$('autonum'), samePlaceEl=$('samePlace'),
+  const nameEl=$('name'), placeEl=$('place'), qtyEl=$('qty'), hiEl=$('hi'), loEl=$('lo'), barcodeInput=$('barcodeInput'), memoEl=$('memo'), seasonsEl=$('seasons'), autonumEl=$('autonum'), samePlaceEl=$('samePlace'),
         photoEl=$('photo'), previewEl=$('preview'), voiceBtn=$('voiceBtn'),
         roomsEl=$('rooms'), roomNameEl=$('roomName'), roomBtn=$('roomBtn'), savednoteEl=$('savednote'),
         listEl=$('list'), countEl=$('count'), statEl=$('stat'), taphintEl=$('taphint'), fchipsEl=$('fchips'),
@@ -394,17 +404,26 @@
   function onScan(code){
     closeScanner();
     if(scanMode==='register'){
-      pendingBarcode=code; if(scanRegBtn) scanRegBtn.textContent='🔖 読取済 ✓';
-      if(barcodeDict[code]) nameEl.value=barcodeDict[code];
+      if(barcodeInput) barcodeInput.value=code;
+      const d=barcodeDict[code];
+      if(d){ if(!nameEl.value) nameEl.value=(d.name||''); if(!placeEl.value && d.place) placeEl.value=d.place; }
       const same=items.filter(it=>it.barcode===code);
       if(same.length){ const tot=same.reduce((s,it)=>s+(it.qty||1),0); toast(`⚠️ この商品、すでに合計${tot}個あります（買いすぎ注意）`, tot>=5); }
-      else toast(barcodeDict[code]?`「${barcodeDict[code]}」を読み取りました。場所を入れて登録を`:'新しい商品です。品名と場所を入れて登録を');
-      showView('regist'); nameEl.focus();
+      else toast(d?`「${d.name}」を読み取りました。個数を入れて登録を`:'新しい商品です。品名と場所を入れて登録を');
+      showView('regist'); (nameEl.value?qtyEl:nameEl).focus();
     } else {
       const hits=items.filter(it=>it.barcode===code);
       showView('browse');
-      if(hits.length){ const it=hits[0], tot=hits.reduce((s,x)=>s+(x.qty||1),0); searchEl.value=barcodeDict[code]||it.name; renderBrowse(); toast(`${it.name}は ${it.place||'場所未記入'} にあります（合計${tot}個）`); }
-      else { searchEl.value=''; renderBrowse(); toast('未登録です。家には無いかも（買ってOK）🛒'); }
+      if(hits.length){
+        const it=hits[0], tot=hits.reduce((s,x)=>s+(x.qty||1),0), low=(it.lo!=null && (it.qty||1)<=it.lo);
+        searchEl.value=(barcodeDict[code]&&barcodeDict[code].name)||it.name; renderBrowse();
+        toast(`${it.name}：${it.place||'場所未記入'}／残り${tot}個${low?'（在庫少なめ⚠️）':''}`);
+      } else {
+        searchEl.value=''; activeRoom=null;
+        listEl.innerHTML=`<div class="empty" style="padding:26px 14px"><div class="big">🛒</div>家には登録されていません<br><span style="font-size:12px">（バーコード：${esc(code)}）</span><br>この商品を登録しますか？<br><button class="add" id="goRegister" style="max-width:260px;margin:14px auto 0">➕ 登録タブで登録する</button></div>`;
+        const gr=document.getElementById('goRegister'); if(gr) gr.onclick=()=>{ if(barcodeInput) barcodeInput.value=code; showView('regist'); nameEl.focus(); toast('登録タブへ。品名と場所を入れてください'); };
+        toast('家には無いようです（買ってOK）🛒');
+      }
     }
   }
   if(scanRegBtn) scanRegBtn.addEventListener('click', ()=>openScanner('register'));
@@ -494,10 +513,12 @@
     if(!name){ toast('品名を入力してください'); nameEl.focus(); return; }
     const base=baseName(name);
     if(autonumEl.checked){ name = base + nextNumber(base); }
-    items.push({id:Date.now()+''+Math.floor(Math.random()*999), name, place, qty, photo:pendingPhoto, season:seasonSel, hi, lo, barcode:pendingBarcode, created:Date.now()});
+    const bc=barcodeInput?barcodeInput.value.trim():'';
+    const now=Date.now();
+    items.push({id:now+''+Math.floor(Math.random()*999), name, place, qty, photo:pendingPhoto, season:seasonSel, hi, lo, barcode:bc, memo:memoEl?memoEl.value.trim():'', created:now, updatedAt:now});
     save(); recordToday();
-    if(pendingBarcode){ barcodeDict[pendingBarcode]=base; saveDict(); pendingBarcode=''; if(scanRegBtn) scanRegBtn.textContent='🔖 バーコード'; }
-    nameEl.value=''; qtyEl.value=''; hiEl.value=''; loEl.value='';
+    if(bc){ barcodeDict[bc]={name:base, place:place}; saveDict(); }
+    nameEl.value=''; qtyEl.value=''; hiEl.value=''; loEl.value=''; if(barcodeInput) barcodeInput.value=''; if(memoEl) memoEl.value='';
     if(!samePlaceEl.checked) placeEl.value='';
     seasonSel=''; [...seasonsEl.children].forEach(c=>c.classList.remove('on'));
     pendingPhoto=''; previewEl.innerHTML=''; photoEl.value=''; nameEl.focus();
@@ -550,9 +571,10 @@
     if(it.hi!=null && q>=it.hi) badges.push(`<span class="badge over">⚠️買いすぎ</span>`);
     if(it.lo!=null && q<=it.lo) badges.push(`<span class="badge low">🛒買い足し</span>`);
     const bd = badges.length?`<div class="badges">${badges.join('')}</div>`:'';
+    const memoLine = it.memo?`<div style="font-size:12px;color:var(--sub);margin-top:2px">📝 ${esc(it.memo)}</div>`:'';
     return `<li data-id="${it.id}">
       ${it.photo?`<img class="thumb" src="${it.photo}" alt="">`:''}
-      <div class="body"><div class="name">${esc(it.name)}</div>${bd}</div>
+      <div class="body"><div class="name">${esc(it.name)}</div>${memoLine}${bd}</div>
       <div class="qstep">
         <button class="qbtn" data-act="dec" data-id="${it.id}" aria-label="減らす">−</button>
         <span class="qv">${q}</span>
@@ -568,7 +590,7 @@
     taphintEl.textContent = items.length ? '見つけたモノをタップ→⏱ 節約時間がたまります' : '';
     const q=searchEl.value.trim().toLowerCase();
     let shown=items.filter(it=>{
-      if(q && !((it.name+' '+it.place+' '+(it.season||'')+' '+(it.barcode||'')).toLowerCase().includes(q))) return false;
+      if(q && !((it.name+' '+it.place+' '+(it.season||'')+' '+(it.barcode||'')+' '+(it.memo||'')).toLowerCase().includes(q))) return false;
       if(activeRoom && !((it.place||'').includes(activeRoom))) return false;
       return true;
     });
