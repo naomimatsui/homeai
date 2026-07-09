@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>HomeAI — 探し物ゼロの家へ</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
   :root{
     --bg:#f5f5f7; --card:#ffffff; --ink:#1d1d1f; --sub:#6e6e73;
@@ -93,6 +94,7 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.warn{background:var(--warn);}
   .scanwrap{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;z-index:20;}
+  .scanwrap.hidden{display:none!important;}
   .scanbox{background:var(--card);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:20px;max-height:85vh;overflow-y:auto;text-align:center;}
   #reader{width:100%;border-radius:14px;overflow:hidden;margin-bottom:12px;background:#000;}
   .scannote{font-size:13px;color:var(--sub);margin:10px 0 12px;}
@@ -182,6 +184,7 @@
           <label class="photobtn">📷 写真（撮る/選ぶ）
             <input type="file" id="photo" accept="image/*" hidden>
           </label>
+          <button type="button" class="photobtn" id="scanRegBtn">🔖 バーコード</button>
           <div class="preview" id="preview"></div>
         </div>
         <div class="row">
@@ -227,7 +230,8 @@
         </div>
         <button class="mic" id="voiceSearchBtn" title="音声でさがす" aria-label="音声でさがす">🎙</button>
       </div>
-      <button class="add" id="voiceAddBtn" style="margin:0 0 14px">🎙 声で追加（「品名、場所」と話す）</button>
+      <button class="add" id="voiceAddBtn" style="margin:0 0 10px">🎙 声で追加（「品名、場所」と話す）</button>
+      <button class="add" id="scanSearchBtn" style="margin:0 0 14px">🔖 バーコードで探す（店で「家にある？」）</button>
       <div class="fchips" id="fchips"></div>
       <div class="count" id="count"></div>
       <div class="stat" id="stat"></div>
@@ -257,6 +261,15 @@
           <button class="add" id="planImportBtn">この内容をプランに反映</button>
         </div>
       </details>
+    </div>
+  </div>
+
+  <div class="scanwrap hidden" id="scanwrap">
+    <div class="scanbox">
+      <h3 style="margin:0 0 6px;font-size:16px;">バーコードを読み取る</h3>
+      <div id="reader"></div>
+      <div class="scannote">JANコード（バーコード）にカメラを向けてください</div>
+      <button class="cancel" id="scanCancel">キャンセル</button>
     </div>
   </div>
 
@@ -372,12 +385,12 @@
   function saveDict(){ localStorage.setItem('homeai_barcode_dict_v1', JSON.stringify(barcodeDict)); }
   function openScanner(mode){
     if(typeof Html5Qrcode==='undefined'){ toast('カメラライブラリの読み込みに失敗。通信環境を確認してください🙏'); return; }
-    scanMode=mode; scanwrap.hidden=false;
+    scanMode=mode; scanwrap.classList.remove('hidden');
     html5QrCode=new Html5Qrcode('reader');
     html5QrCode.start({facingMode:'environment'},{fps:10,qrbox:220}, function(code){ onScan(code); }, function(){})
       .catch(function(err){ toast('カメラを起動できませんでした：'+((err&&err.name)||err)); });
   }
-  function closeScanner(){ if(html5QrCode){ html5QrCode.stop().then(function(){ html5QrCode.clear(); html5QrCode=null; }).catch(function(){ html5QrCode=null; }); } scanwrap.hidden=true; }
+  function closeScanner(){ if(html5QrCode){ html5QrCode.stop().then(function(){ html5QrCode.clear(); html5QrCode=null; }).catch(function(){ html5QrCode=null; }); } scanwrap.classList.add('hidden'); }
   function onScan(code){
     closeScanner();
     if(scanMode==='register'){
