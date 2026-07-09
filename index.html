@@ -111,6 +111,9 @@
   .chmsg{font-size:12.5px;color:var(--accent);margin-top:6px;font-weight:600;}
   .plantitle{font-weight:700;font-size:16px;letter-spacing:-.01em;margin-bottom:6px;}
   .planprog{font-size:14px;color:var(--accent);font-weight:700;margin:8px 0 12px;}
+  .phaseguide{background:var(--accent-soft);border-radius:12px;padding:11px 13px;margin:4px 0 14px;}
+  .phaseguide .ph{font-size:12.5px;color:var(--ink);line-height:1.75;}
+  .phaseguide .ph b{color:var(--accent);margin-right:6px;}
   .planrow{display:flex;align-items:center;gap:7px;padding:8px 0;border-bottom:1px solid var(--line);}
   .planrow input[type=checkbox]{width:21px;height:21px;accent-color:var(--accent);flex:none;}
   .planrow .ptext{flex:1;min-width:0;border:none;background:transparent;font-size:14px;color:var(--ink);padding:5px 4px;outline:none;border-radius:6px;}
@@ -266,6 +269,11 @@
       <div class="card">
         <div class="plantitle">🎯 30日で「探し物ゼロ」プラン</div>
         <p class="imphint">1日ずつでも、順番はバラバラでもOK。サボった分は翌日でも大丈夫。<br><b>30日で全部チェック</b>できたら達成🎉（↑↓で順番変更・自由に編集/追加）</p>
+        <div class="phaseguide">
+          <div class="ph"><b>Day 1–10</b>まず登録（家じゅうをHomeAIに入れる）</div>
+          <div class="ph"><b>Day 11–20</b>定位置を決めて片づける</div>
+          <div class="ph"><b>Day 21–30</b>仕上げ＆ビフォーアフター</div>
+        </div>
         <div class="planprog" id="planprog"></div>
         <div id="planlist"></div>
         <div class="roomadd">
